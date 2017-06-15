@@ -104,6 +104,7 @@ void SSLClient::init_openssl_library() {
 int SSLClient::create_socket(const char * hostname,const char * port) {
     /* ---------------------------------------------------------- *
      * create_socket() creates the socket & TCP-connect to server *
+     * non specifica per SSL
      * ---------------------------------------------------------- */
     //int sockfd;
 
@@ -140,6 +141,7 @@ int SSLClient::create_socket(const char * hostname,const char * port) {
      * Try to make the host connect here                          *
      * ---------------------------------------------------------- */
     int res = connect(server_sock, (struct sockaddr *) &dest_addr, sizeof(struct sockaddr));
+
     if (res  == -1) {
         BIO_printf(this->outbio, "Error: Cannot connect to host %s [%s] on port %d.\n",
                    hostname, tmp_ptr, portCod);
@@ -193,7 +195,7 @@ SSL * SSLClient::connectTo(SSL * ssl,const char* hostname){
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
 
     this->configure_context(certFile, keyFile, chainFile);
-    //cout << "Cert and key configured" << endl;
+    cout << "Cert and key configured" << endl;
 
     /* ---------------------------------------------------------- *
      * Create new SSL connection state object                     *
