@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindowPV</class>
+ <widget class="QMainWindow" name="MainWindowPV">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>884</width>
+    <height>605</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindowPV</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(49, 149, 255);</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="styleSheet">
+    <string notr="true">.QPushButton {
+background-color:rgb(146, 134, 134);
+	background-color: rgb(148, 140, 140);
+font-size: 24px bold sans serif;
+text-align:center;
+vertical-align:middle;
+min-height:60px;
+color:black;
+}
+
+.QLabel {
+color: white;
+font-size: 22px bold sans serif;
+}
+
+.QLineEdit{
+font-size: 24px bold sans serif;
+background-color: white;
+}
+</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QStackedWidget" name="stackedWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="attivazione_page">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <layout class="QFormLayout" name="formLayout">
+              <property name="leftMargin">
+               <number>50</number>
+              </property>
+              <property name="topMargin">
+               <number>150</number>
+              </property>
+              <property name="rightMargin">
+               <number>50</number>
+              </property>
+              <property name="bottomMargin">
+               <number>50</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="passwordPV_label">
+                <property name="text">
+                 <string>Password PV n.1</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="passwordPV_lineEdit">
+                <property name="placeholderText">
+                 <string>Digitare la password di sessione</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="wrongPassword_label">
+                <property name="styleSheet">
+                 <string notr="true">color:red;</string>
+                </property>
+                <property name="text">
+                 <string>la password inserita non è valida, riprovare...</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="spacing">
+             <number>50</number>
+            </property>
+            <property name="leftMargin">
+             <number>50</number>
+            </property>
+            <property name="rightMargin">
+             <number>50</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="attiva_button">
+              <property name="text">
+               <string>Attiva</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="exit_button">
+              <property name="text">
+               <string>Exit</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="disponibile_page">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="leftMargin">
+         <number>50</number>
+        </property>
+        <property name="rightMargin">
+         <number>50</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="postazioneAttiva_label">
+          <property name="text">
+           <string>Postazione attiva, disponibile per una associazione...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="abilitazioneVoto_page">
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <property name="leftMargin">
+           <number>50</number>
+          </property>
+          <property name="rightMargin">
+           <number>50</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <layout class="QFormLayout" name="formLayout_2">
+              <property name="topMargin">
+               <number>100</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="inserisciOTP_label">
+                <property name="text">
+                 <string>Inserisci codice OTP</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="codiceOTP_lineEdit">
+                <property name="placeholderText">
+                 <string>Clicca sul token e digita qui il token OTP</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="confermaOTP_button">
+              <property name="text">
+               <string>Conferma</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="compilazioneSchede_page">
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <property name="leftMargin">
+           <number>50</number>
+          </property>
+          <property name="rightMargin">
+           <number>50</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <layout class="QFormLayout" name="schedaVoto_formLayout">
+              <item row="0" column="0" colspan="2">
+               <widget class="QLabel" name="descrizioneProcedura_label">
+                <property name="text">
+                 <string>&lt;Descrizione procedura di voto&gt;: scheda &lt;codiceScheda&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="2">
+               <widget class="QLabel" name="numPreferenze_label">
+                <property name="text">
+                 <string>Numero massimo di preferenze da selezionare: &lt;num. preferenze&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <layout class="QFormLayout" name="preferenzeScheda_formLayout"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QPushButton" name="pushButton">
+              <property name="text">
+               <string>Prossima scheda / invia preferenze</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="votoInviato_page">
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <property name="leftMargin">
+         <number>50</number>
+        </property>
+        <property name="rightMargin">
+         <number>50</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="preferemzeInviate_label">
+          <property name="text">
+           <string>Preferenze di voto inviate correttamente</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="riconsegnareHT_label">
+          <property name="text">
+           <string>Riconsegnare l'hardware token alla commissione!</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
