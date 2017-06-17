@@ -29,9 +29,19 @@ SSLClient::SSLClient(){
 
 }
 
-void SSLClient::updateStatoPVtoSeggio(SSL * ssl, const char * hostnamePV, unsigned int idPV, unsigned int statoPV){
+SSLClient::~SSLClient(){
+    /* ---------------------------------------------------------- *
+     * Free the structures we don't need anymore                  *
+     * -----------------------------------------------------------*/
+
+    SSL_CTX_free(this->ctx);
+
+
+}
+
+void SSLClient::updateStatoPVtoSeggio(SSL * ssl, const char * hostnameSeggio, unsigned int idPV, unsigned int statoPV){
     //comunica al seggio come è cambiato lo stato della postazione di voto.
-    cout << "Try to update..." << endl;
+    //cout << "Try to update..." << endl;
 
     std::stringstream ss;
     ss << idPV;
@@ -43,40 +53,26 @@ void SSLClient::updateStatoPVtoSeggio(SSL * ssl, const char * hostnamePV, unsign
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
 
-    //delete[] charArray_idPV;
+
 
     std::stringstream ss1;
     ss1 << statoPV;
     const char *  charArray_statoPV = ss1.str().c_str();
     cout << "statoPV: " <<charArray_statoPV << endl;
-    //cout << ssl << endl;
-    cout << "nuovo stato: "<<charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
-    //delete[] charArray_statoPV;
-    cout << "Try to update... 2" << endl;
+    //cout << "Try to update... 2" << endl;
 
 
     BIO_printf(outbio, "Finished SSL/TLS connection with server: %s.\n",
-               hostnamePV);
+               hostnameSeggio);
+
+
     BIO_free_all(outbio);
     close(this->server_sock);
-
-
-
     SSL_shutdown(ssl);
-
     SSL_free(ssl);
-}
-SSLClient::~SSLClient(){
-    /* ---------------------------------------------------------- *
-     * Free the structures we don't need anymore                  *
-     * -----------------------------------------------------------*/
-
-    SSL_CTX_free(this->ctx);
-
-
 }
 
 void SSLClient::init_openssl_library() {
@@ -108,7 +104,7 @@ int SSLClient::create_socket(const char * hostname,const char * port) {
      * ---------------------------------------------------------- */
     //int sockfd;
 
-    char *tmp_ptr = NULL;
+    const char *address_printable = NULL;
     //int port;
     struct hostent *host;
     struct sockaddr_in dest_addr;
@@ -128,14 +124,15 @@ int SSLClient::create_socket(const char * hostname,const char * port) {
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(portCod);
     dest_addr.sin_addr.s_addr = *(long*) (host->h_addr);
-    //dest_addr.sin_addr.s_addr = inet_addr("string_ip_address");
+    //dest_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     /* ---------------------------------------------------------- *
      * Zeroing the rest of the struct                             *
      * ---------------------------------------------------------- */
     memset(&(dest_addr.sin_zero), '\0', 8);
 
-    tmp_ptr = inet_ntoa(dest_addr.sin_addr);
+    address_printable = inet_ntoa(dest_addr.sin_addr);
+    //address_printable = inet_ntop(dest_addr.sin_addr);
 
     /* ---------------------------------------------------------- *
      * Try to make the host connect here                          *
@@ -144,10 +141,10 @@ int SSLClient::create_socket(const char * hostname,const char * port) {
 
     if (res  == -1) {
         BIO_printf(this->outbio, "Error: Cannot connect to host %s [%s] on port %d.\n",
-                   hostname, tmp_ptr, portCod);
+                   hostname, address_printable, portCod);
     } else {
         BIO_printf(this->outbio, "Successfully connect to host %s [%s] on port %d.\n",
-                   hostname, tmp_ptr, portCod);
+                   hostname, address_printable, portCod);
 
     }
 

@@ -41,7 +41,7 @@ public:
     int servicesToSeggio();
     //dati membro
 private:
-    unsigned int idPostazioneVoto; //relativo all'IP
+    unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
     unsigned int sessionKey_PV_Urna; //chiave privata presente sulla smart card
     unsigned int publicKeyPV; //prelevato dalla SC all'atto dell'inizializzazione
     unsigned int publicKeyRP; //ottenuto dall'Urna

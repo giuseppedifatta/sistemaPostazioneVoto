@@ -16,7 +16,7 @@ PostazioneVoto::PostazioneVoto() {
     symKeyAES = 0;
 
     //calcolato dall'indirizzo IP
-    idPostazioneVoto = 1;
+    idPostazioneVoto = 2;
 
 
     //connessione all'urna e richiesta di questi dati
