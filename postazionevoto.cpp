@@ -7,6 +7,7 @@
 
 #include "postazionevoto.h"
 #include <iostream>
+
 using namespace std;
 
 PostazioneVoto::PostazioneVoto() {
@@ -30,7 +31,6 @@ PostazioneVoto::~PostazioneVoto() {
     // TODO Auto-generated destructor stub
 }
 
-
 bool PostazioneVoto::PostazioneVoto::offlinePV() {
     // se è possibile comunicare con l'Urna Virtuale ritorna true;
     //se urna non raggiungibile
@@ -44,12 +44,11 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
     this->pv_client = new SSLClient();
-    const char * postazioneSeggio = "localhost"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
-    SSL * ssl = nullptr;
-    cout << "SSL pointer pre-connect: " << ssl << endl;
-    ssl = this->pv_client->connectTo(ssl,postazioneSeggio);
-    cout << "SSL pointer post-connect: " << ssl << endl;
-    this->pv_client->updateStatoPVtoSeggio(ssl,postazioneSeggio,this->idPostazioneVoto,this->statoPV);
+    const char * postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
+    cout << "SSL pointer pre-connect: " << this->pv_client->ssl << endl;
+    this->pv_client->connectTo(postazioneSeggio);
+    cout << "SSL pointer post-connect: " << this->pv_client->ssl << endl;
+    this->pv_client->updateStatoPVtoSeggio(pv_client->ssl,postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
 }
 
@@ -120,13 +119,9 @@ bool PostazioneVoto::inviaSchedeToUrnaVirtuale() {
     return true;
 }
 
-
-
-
 void PostazioneVoto::mostraSchede(tinyxml2::XMLDocument *pschedeVoto) {
     //TODO
 }
-
 
 bool PostazioneVoto::enablingPV() {
  return true;

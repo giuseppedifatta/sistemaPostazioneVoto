@@ -24,9 +24,38 @@ using namespace std;
 
 
 SSLClient::SSLClient(){
-
+    /* ---------------------------------------------------------- *
+     * Create the Input/Output BIO's.                             *
+     * ---------------------------------------------------------- */
     outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
 
+    const SSL_METHOD *method;
+    /* ---------------------------------------------------------- *
+     * Function that initialize openssl for correct work.		  *
+     * ---------------------------------------------------------- */
+    this->init_openssl_library();
+
+
+    method = TLSv1_2_client_method();
+
+    /* ---------------------------------------------------------- *
+     * Try to create a new SSL context                            *
+     * ---------------------------------------------------------- */
+    if ((this->ctx = SSL_CTX_new(method)) == NULL)
+        BIO_printf(this->outbio, "Unable to create a new SSL context structure.\n");
+
+    /* ---------------------------------------------------------- *
+     * Disabling SSLv2 and SSLv3 will leave TSLv1 for negotiation    *
+     * ---------------------------------------------------------- */
+    SSL_CTX_set_options(this->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
+    char certFile[] = "/home/giuseppe/myCA/intermediate/certs/client.cert.pem";
+    char keyFile[] = "/home/giuseppe/myCA/intermediate/private/client.key.pem";
+    char chainFile[] =
+            "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
+
+    this->configure_context(certFile, keyFile, chainFile);
+    cout << "Cert and key configured" << endl;
 }
 
 SSLClient::~SSLClient(){
@@ -71,8 +100,8 @@ void SSLClient::updateStatoPVtoSeggio(SSL * ssl, const char * hostnameSeggio, un
 
     BIO_free_all(outbio);
     close(this->server_sock);
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
+    SSL_shutdown(this->ssl);
+    SSL_free(this->ssl);
 }
 
 void SSLClient::init_openssl_library() {
@@ -97,34 +126,38 @@ void SSLClient::init_openssl_library() {
 
 }
 
-int SSLClient::create_socket(const char * hostname,const char * port) {
+int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port) {
     /* ---------------------------------------------------------- *
      * create_socket() creates the socket & TCP-connect to server *
      * non specifica per SSL
      * ---------------------------------------------------------- */
-    //int sockfd;
 
     const char *address_printable = NULL;
-    //int port;
-    struct hostent *host;
+
+    /* decomentare per usare l'hostname
+     * struct hostent *host;
+     */
+
     struct sockaddr_in dest_addr;
 
     unsigned int portCod = atoi(port);
-
+    /* decommentare la sezione se si passa alla funzione l'hostname invece dell'ip dell'host
     if ((host = gethostbyname(hostname)) == NULL) {
         BIO_printf(this->outbio, "Error: Cannot resolve hostname %s.\n", hostname);
         abort();
     }
+    */
 
     /* ---------------------------------------------------------- *
      * create the basic TCP socket                                *
      * ---------------------------------------------------------- */
-    server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    this->server_sock = socket(AF_INET, SOCK_STREAM, 0);
 
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(portCod);
-    dest_addr.sin_addr.s_addr = *(long*) (host->h_addr);
-    //dest_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    //dest_addr.sin_addr.s_addr = *(long*) (host->h_addr);
+    // commentare la riga sotto se non si vuole usare l'ip dell'host, ma l'hostname
+    dest_addr.sin_addr.s_addr = inet_addr(hostIP);
 
     /* ---------------------------------------------------------- *
      * Zeroing the rest of the struct                             *
@@ -137,14 +170,14 @@ int SSLClient::create_socket(const char * hostname,const char * port) {
     /* ---------------------------------------------------------- *
      * Try to make the host connect here                          *
      * ---------------------------------------------------------- */
-    int res = connect(server_sock, (struct sockaddr *) &dest_addr, sizeof(struct sockaddr));
+    int res = connect(this->server_sock, (struct sockaddr *) &dest_addr, sizeof(struct sockaddr));
 
     if (res  == -1) {
         BIO_printf(this->outbio, "Error: Cannot connect to host %s [%s] on port %d.\n",
-                   hostname, address_printable, portCod);
+                   hostIP /*hostname*/, address_printable, portCod);
     } else {
         BIO_printf(this->outbio, "Successfully connect to host %s [%s] on port %d.\n",
-                   hostname, address_printable, portCod);
+                   hostIP /*hostname*/, address_printable, portCod);
 
     }
 
@@ -152,101 +185,60 @@ int SSLClient::create_socket(const char * hostname,const char * port) {
     return res;
 }
 
-SSL * SSLClient::connectTo(SSL * ssl,const char* hostname){
-
+SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
     const char * port = SERVER_PORT;
-
-    const SSL_METHOD *method;
-
-
-    /* ---------------------------------------------------------- *
-     * Function that initialize openssl for correct work.		  *
-     * ---------------------------------------------------------- */
-    this->init_openssl_library();
-
-    /* ---------------------------------------------------------- *
-     * Create the Input/Output BIO's.                             *
-     * ---------------------------------------------------------- */
-
-
-    /* ---------------------------------------------------------- *
-     * Set SSLv2 client hello, also announce SSLv3 and TLSv1      *
-     * ---------------------------------------------------------- */
-    //method = SSLv23_client_method();
-    method = TLSv1_2_client_method();
-
-    /* ---------------------------------------------------------- *
-     * Try to create a new SSL context                            *
-     * ---------------------------------------------------------- */
-    if ((this->ctx = SSL_CTX_new(method)) == NULL)
-        BIO_printf(this->outbio, "Unable to create a new SSL context structure.\n");
-
-    /* ---------------------------------------------------------- *
-     * Disabling SSLv2 and SSLv3 will leave TSLv1 for negotiation    *
-     * ---------------------------------------------------------- */
-    SSL_CTX_set_options(this->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-
-    char certFile[] = "/home/giuseppe/myCA/intermediate/certs/client.cert.pem";
-    char keyFile[] = "/home/giuseppe/myCA/intermediate/private/client.key.pem";
-    char chainFile[] =
-            "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
-
-    this->configure_context(certFile, keyFile, chainFile);
-    cout << "Cert and key configured" << endl;
-
     /* ---------------------------------------------------------- *
      * Create new SSL connection state object                     *
      * ---------------------------------------------------------- */
-
-    ssl = SSL_new(this->ctx);
-    cout << "ConnectTo - ssl pointer: " << ssl << endl;
+    this->ssl = SSL_new(this->ctx);
+    cout << "ConnectTo - ssl pointer: " << this->ssl << endl;
     /* ---------------------------------------------------------- *
      * Make the underlying TCP socket connection                  *
      * ---------------------------------------------------------- */
 
 
-    int res = create_socket(hostname,port);
+    int res = create_socket(hostIP /*hostname*/,port);
     if (res == 0){
         BIO_printf(this->outbio,
                    "Successfully create the socket for TCP connection to: %s.\n",
-                   hostname);
+                   hostIP /*hostname*/);
     }
     else {
         BIO_printf(this->outbio,
                    "Unable to create the socket for TCP connection to: %s.\n",
-                   hostname);
+                   hostIP /*hostname*/);
     }
 
     /* ---------------------------------------------------------- *
      * Attach the SSL session to the socket descriptor            *
      * ---------------------------------------------------------- */
 
-    if (SSL_set_fd(ssl, this->server_sock) != 1) {
-        BIO_printf(this->outbio, "Error: Connection to %s failed", hostname);
+    if (SSL_set_fd(this->ssl, this->server_sock) != 1) {
+        BIO_printf(this->outbio, "Error: Connection to %s failed", hostIP /*hostname*/);
     }
     else
-        BIO_printf(this->outbio, "Ok: Connection to %s ", hostname);
+        BIO_printf(this->outbio, "Ok: Connection to %s ", hostIP /*hostname*/);
     /* ---------------------------------------------------------- *
      * Try to SSL-connect here, returns 1 for success             *
      * ---------------------------------------------------------- */
-    if (SSL_connect(ssl) != 1) //SSL handshake
+    if (SSL_connect(this->ssl) != 1) //SSL handshake
         BIO_printf(this->outbio, "Error: Could not build a SSL session to: %s.\n",
-                   hostname);
+                   hostIP /*hostname*/);
     else
         BIO_printf(this->outbio, "Successfully enabled SSL/TLS session to: %s.\n",
-                   hostname);
-    ShowCerts(ssl);
-    verify_ServerCert(hostname,ssl);
-    //SSL_set_connect_state(ssl);
-    return ssl;
+                   hostIP /*hostname*/);
+    ShowCerts();
+    verify_ServerCert(hostIP /*hostname*/);
+    //SSL_set_connect_state(this->ssl);
+    return this->ssl;
 }
 
 
-void SSLClient::ShowCerts(SSL * ssl) {
+void SSLClient::ShowCerts() {
     X509 *peer_cert;
     char *line;
 
-    peer_cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
+    peer_cert = SSL_get_peer_certificate(this->ssl); /* Get certificates (if available) */
 
     //ERR_print_errors_fp(stderr);
     if (peer_cert != NULL) {
@@ -287,7 +279,7 @@ void SSLClient::configure_context(char* CertFile, char* KeyFile, char * ChainFil
 
 }
 
-void SSLClient::verify_ServerCert(const char * hostname,SSL *ssl) {
+void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
 
 
     // Declare X509 structure
@@ -301,19 +293,18 @@ void SSLClient::verify_ServerCert(const char * hostname,SSL *ssl) {
     int ret;
     //BIO *outbio = NULL;
     BIO *certbio = NULL;
-    this->outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
     certbio = BIO_new(BIO_s_file());
 
 
     // Get the remote certificate into the X509 structure
 
-    peer_cert = SSL_get_peer_certificate(ssl);
+    peer_cert = SSL_get_peer_certificate(this->ssl);
     if (peer_cert == NULL)
         BIO_printf(this->outbio, "Error: Could not get a certificate from: %s.\n",
-                   hostname);
+                   hostIP /*hostname*/);
     else
         BIO_printf(this->outbio, "Retrieved the server's certificate from: %s.\n",
-                   hostname);
+                   hostIP /*hostname*/);
 
 
     // extract various certificate information

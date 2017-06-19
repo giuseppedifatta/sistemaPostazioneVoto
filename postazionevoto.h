@@ -14,7 +14,7 @@
 
 using namespace std;
 using namespace tinyxml2;
-
+class SSLClient;
 class PostazioneVoto {
 public:
     PostazioneVoto();
