@@ -15,8 +15,8 @@ PostazioneVoto::PostazioneVoto() {
     ivCBC = 0;
     symKeyAES = 0;
 
-    //calcolato dall'indirizzo IP
-    idPostazioneVoto = 2;
+    //TODO calcolare dall'indirizzo IP
+    idPostazioneVoto = 3;
 
 
     //connessione all'urna e richiesta di questi dati
