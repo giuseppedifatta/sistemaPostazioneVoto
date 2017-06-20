@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto() {
     symKeyAES = 0;
 
     //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 3;
+    idPostazioneVoto = 1;
 
 
     //connessione all'urna e richiesta di questi dati
@@ -44,7 +44,7 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
     this->pv_client = new SSLClient();
-    const char * postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
+    const char * postazioneSeggio = "127.0.0.1"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
     cout << "SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
     cout << "SSL pointer post-connect: " << this->pv_client->ssl << endl;
@@ -119,9 +119,9 @@ bool PostazioneVoto::inviaSchedeToUrnaVirtuale() {
     return true;
 }
 
-void PostazioneVoto::mostraSchede(tinyxml2::XMLDocument *pschedeVoto) {
-    //TODO
-}
+//void PostazioneVoto::mostraSchede(tinyxml2::XMLDocument *pschedeVoto) {
+//    //TODO
+//}
 
 bool PostazioneVoto::enablingPV() {
  return true;

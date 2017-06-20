@@ -28,14 +28,14 @@ SSLClient::SSLClient(){
      * Create the Input/Output BIO's.                             *
      * ---------------------------------------------------------- */
     outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
+    ssl = nullptr;
 
-    const SSL_METHOD *method;
     /* ---------------------------------------------------------- *
      * Function that initialize openssl for correct work.		  *
      * ---------------------------------------------------------- */
     this->init_openssl_library();
 
-
+    const SSL_METHOD *method;
     method = TLSv1_2_client_method();
 
     /* ---------------------------------------------------------- *
@@ -187,14 +187,6 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
 
 SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
     const char * port = SERVER_PORT;
-    /* ---------------------------------------------------------- *
-     * Create new SSL connection state object                     *
-     * ---------------------------------------------------------- */
-    this->ssl = SSL_new(this->ctx);
-    cout << "ConnectTo - ssl pointer: " << this->ssl << endl;
-    /* ---------------------------------------------------------- *
-     * Make the underlying TCP socket connection                  *
-     * ---------------------------------------------------------- */
 
 
     int res = create_socket(hostIP /*hostname*/,port);
@@ -208,6 +200,15 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
                    "Unable to create the socket for TCP connection to: %s.\n",
                    hostIP /*hostname*/);
     }
+
+    /* ---------------------------------------------------------- *
+     * Create new SSL connection state object                     *
+     * ---------------------------------------------------------- */
+    this->ssl = SSL_new(this->ctx);
+    cout << "ConnectTo - ssl pointer: " << this->ssl << endl;
+    /* ---------------------------------------------------------- *
+     * Make the underlying TCP socket connection                  *
+     * ---------------------------------------------------------- */
 
     /* ---------------------------------------------------------- *
      * Attach the SSL session to the socket descriptor            *
