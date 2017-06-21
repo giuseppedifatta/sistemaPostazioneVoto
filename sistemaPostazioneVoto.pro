@@ -15,11 +15,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindowpv.cpp \
     postazionevoto.cpp \
-    sslclient.cpp
+    sslclient.cpp \
+    sslserver.cpp
 
 HEADERS  += mainwindowpv.h \
     postazionevoto.h \
-    sslclient.h
+    sslclient.h \
+    sslserver.h
 
 FORMS    += mainwindowpv.ui
 

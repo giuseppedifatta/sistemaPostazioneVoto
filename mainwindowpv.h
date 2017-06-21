@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "postazionevoto.h"
-
+class PostazioneVoto;
 namespace Ui {
 class MainWindowPV;
 }
@@ -28,6 +28,7 @@ public:
     explicit MainWindowPV(QWidget *parent = 0);
     ~MainWindowPV();
 
+    void mostraInterfacciaAbilitazioneWithOTP();
 private slots:
     void on_exit_button_clicked();
 

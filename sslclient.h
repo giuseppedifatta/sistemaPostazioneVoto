@@ -27,7 +27,7 @@ public:
 
     SSL * connectTo(const char *hostIP);
     unsigned int getStatoPV();
-    void updateStatoPVtoSeggio(SSL * ssl, const char * hostnamePV, unsigned int idPV, unsigned int statoPV);
+    void updateStatoPVtoSeggio(const char * hostnamePV, unsigned int idPV, unsigned int statoPV);
 };
 
 

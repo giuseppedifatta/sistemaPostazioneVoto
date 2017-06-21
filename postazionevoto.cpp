@@ -10,8 +10,8 @@
 
 using namespace std;
 
-PostazioneVoto::PostazioneVoto() {
-
+PostazioneVoto::PostazioneVoto(MainWindowPV *pv) {
+    mainWindow = pv;
     HTAssociato = 0;
     ivCBC = 0;
     symKeyAES = 0;
@@ -48,7 +48,7 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     cout << "SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
     cout << "SSL pointer post-connect: " << this->pv_client->ssl << endl;
-    this->pv_client->updateStatoPVtoSeggio(pv_client->ssl,postazioneSeggio,this->idPostazioneVoto,this->statoPV);
+    this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
 }
 
@@ -87,7 +87,15 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
 }
 
 void PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
-    this->HTAssociato = tokenCod;
+    if(this->HTAssociato == 0){
+        this->HTAssociato = tokenCod;
+        //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
+        mainWindow->mostraInterfacciaAbilitazioneWithOTP();
+        this->setStatoPV(this->statiPV::attesa_abilitazione);
+    }
+    else{
+        cerr << "un ht è già associato alla postazione di voto, impossibile associarne un altro!" << endl;
+    }
 }
 
 unsigned int PostazioneVoto::getHTAssociato() {
@@ -106,8 +114,9 @@ void PostazioneVoto::compilaScheda() {
     //TODO
 } //estrae i dati dalla schermata di compilazione di una singola scheda e inserisce un elemento nel vettore delle schedeCompilate
 
-int PostazioneVoto::servicesToSeggio() {
-    //TODO creare una socket in ascolto per ricevere le richieste dalla postazione seggio
+int PostazioneVoto::runServicesToSeggio() {
+
+    server_thread = thread(&PostazioneVoto::runServerListenSeggio, this);
     return 0;
 }
 
@@ -124,6 +133,22 @@ bool PostazioneVoto::inviaSchedeToUrnaVirtuale() {
 //}
 
 bool PostazioneVoto::enablingPV() {
- return true;
+    return true;
 }
 
+void PostazioneVoto::runServerListenSeggio(){
+    this->pv_server = new SSLServer(this);
+    this->mutex_stdout.lock();
+    cout << "avvio del pv_server per rispondere alle richieste del seggio" << endl;
+    this->mutex_stdout.unlock();
+    while(1){
+        this->pv_server->ascoltaSeggio();
+    }
+    this->mutex_stdout.lock();
+    cout << "runServerListenSeggio: exit!" << endl;
+    this->mutex_stdout.unlock();
+
+    // il thread che eseguiva la funzione termina se la funzione arriva alla fine
+    return;
+
+}

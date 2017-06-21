@@ -10,14 +10,23 @@
 
 #include <tinyxml2.h>
 #include <string>
+#include <mutex>
+#include <thread>
 #include "sslclient.h"
+#include "sslserver.h"
+#include "mainwindowpv.h"
+
 
 using namespace std;
 using namespace tinyxml2;
+
 class SSLClient;
+class SSLServer;
+class MainWindowPV;
+
 class PostazioneVoto {
 public:
-    PostazioneVoto();
+    PostazioneVoto(MainWindowPV *pv);
     virtual ~PostazioneVoto();
     bool smartCardIsOn();
     enum statiPV {
@@ -33,14 +42,18 @@ public:
 
     //metodi per la visualizzazione delle schermate
     void mostraSchede(XMLDocument *pschedeVoto);
-    bool mostraAuthenticationOTP();
-    void mostraPostazioneVotoInizializzata();
-    void mostraVotoMemorizzato();
 
+
+    //comunica con l'otp server provider per fornire il codice inserito, restituisce true, se il codice inserito è esatto
     bool enablingPV();
-    int servicesToSeggio();
+    int runServicesToSeggio();
+
+    mutex mutex_stdout;
     //dati membro
+
+     void setHTAssociato(unsigned int tokenCod);
 private:
+    MainWindowPV *mainWindow;
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
     unsigned int sessionKey_PV_Urna; //chiave privata presente sulla smart card
     unsigned int publicKeyPV; //prelevato dalla SC all'atto dell'inizializzazione
@@ -57,19 +70,22 @@ private:
     statiPV statoPV;
 
     SSLClient *pv_client;
-
+    SSLServer *pv_server;
+    thread server_thread;
+    void runServerListenSeggio();
 protected:
 
     //monitoraggio postazione, servizi per il seggio
     bool feedbackFreeBusy();
-    void inactivitySessionClose();
-
     bool offlinePV();
+
+
+    void inactivitySessionClose();
 
     std::string getStatoPostazioneAsString();
 
     bool voteAuthorizationWithOTP();
-    void setHTAssociato(unsigned int tokenCod);
+
     unsigned int getHTAssociato();
 
     unsigned int getIdPostazioneVoto();

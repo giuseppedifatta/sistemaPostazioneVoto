@@ -9,7 +9,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     ui(new Ui::MainWindowPV)
 {
     ui->setupUi(this);
-    pv=new PostazioneVoto();
+    pv=new PostazioneVoto(this);
     cout << "postazione avviata" << endl;
     ui->wrongPassword_label->hide();
 }
@@ -35,10 +35,14 @@ void MainWindowPV::on_attiva_button_clicked()
         ui->stackedWidget->setCurrentIndex(InterfacciePV::disponibile);
         ui->passwordPV_lineEdit->setText("");
         pv->setStatoPV(PostazioneVoto::libera);
-
+        //avvio server in ascolto del seggio
+        pv->runServicesToSeggio();
     }
     else{
         ui->wrongPassword_label->show();
     }
 }
 
+void MainWindowPV::mostraInterfacciaAbilitazioneWithOTP(){
+    ui->stackedWidget->setCurrentIndex(InterfacciePV::abilitazione);
+}

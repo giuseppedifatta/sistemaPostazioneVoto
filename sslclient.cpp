@@ -64,17 +64,17 @@ SSLClient::~SSLClient(){
      * -----------------------------------------------------------*/
 
     SSL_CTX_free(this->ctx);
-
+    BIO_free_all(outbio);
 
 }
 
-void SSLClient::updateStatoPVtoSeggio(SSL * ssl, const char * hostnameSeggio, unsigned int idPV, unsigned int statoPV){
+void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int idPV, unsigned int statoPV){
     //comunica al seggio come è cambiato lo stato della postazione di voto.
     //cout << "Try to update..." << endl;
 
-    std::stringstream ss;
+    stringstream ss;
     ss << idPV;
-    std::string str= ss.str();
+    string str= ss.str();
     const char * charArray_idPV = str.c_str();
     cout << "idPV to update: " << charArray_idPV << endl;
    // cout << "updateStatoPVtoSeggio, ssl pointer: " << ssl << endl;
@@ -84,21 +84,16 @@ void SSLClient::updateStatoPVtoSeggio(SSL * ssl, const char * hostnameSeggio, un
 
 
 
-    std::stringstream ss1;
+    stringstream ss1;
     ss1 << statoPV;
     const char *  charArray_statoPV = ss1.str().c_str();
     cout << "statoPV: " <<charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
-    //cout << "Try to update... 2" << endl;
-
 
     BIO_printf(outbio, "Finished SSL/TLS connection with server: %s.\n",
                hostnameSeggio);
-
-
-    BIO_free_all(outbio);
     close(this->server_sock);
     SSL_shutdown(this->ssl);
     SSL_free(this->ssl);
