@@ -208,7 +208,7 @@ void SSLServer::service(servizi servizio) {
         //work in progres...
         unsigned int idHT;
 
-        SSL_read(ssl, buf, sizeof(buf));
+        bytes  = SSL_read(ssl, buf, sizeof(buf));
         if (bytes>0){
             buf[bytes] = 0;
             idHT = atoi(buf);
@@ -646,7 +646,7 @@ void SSLServer::verify_ClientCert() {
     BIO_printf(outbio, "Server: Verification return code: %d\n", ret);
 
     if (ret == 0 || ret == 1){
-       BIO_printf(outbio, "Server: Verification result text: %s\n",
+        BIO_printf(outbio, "Server: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
     }
     /* ---------------------------------------------------------- *
@@ -716,7 +716,7 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
     }
     else{
-       cout << "Server: file unreadable" << endl;
+        cout << "Server: file unreadable" << endl;
     }
     return 0;
 }
