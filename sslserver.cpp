@@ -208,7 +208,7 @@ void SSLServer::service(servizi servizio) {
         //work in progres...
         unsigned int idHT;
 
-        bytes  = SSL_read(ssl, buf, sizeof(buf));
+        bytes = SSL_read(ssl, buf, sizeof(buf));
         if (bytes>0){
             buf[bytes] = 0;
             idHT = atoi(buf);
