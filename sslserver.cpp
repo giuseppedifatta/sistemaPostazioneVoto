@@ -227,7 +227,7 @@ void SSLServer::service(servizi servizio) {
         if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione) || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
             //TODO imposta stato postazione a libera
             pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
-
+            pvChiamante->setHTAssociato(0);
             //settiamo il valore 0 in caso di operazione riuscita
             success = 0;
             pvChiamante->mutex_stdout.lock();

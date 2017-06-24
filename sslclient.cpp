@@ -213,7 +213,7 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
         BIO_printf(this->outbio, "Error: Connection to %s failed", hostIP /*hostname*/);
     }
     else
-        BIO_printf(this->outbio, "Ok: Connection to %s ", hostIP /*hostname*/);
+        BIO_printf(this->outbio, "Ok: Connection to %s /n", hostIP /*hostname*/);
     /* ---------------------------------------------------------- *
      * Try to SSL-connect here, returns 1 for success             *
      * ---------------------------------------------------------- */
