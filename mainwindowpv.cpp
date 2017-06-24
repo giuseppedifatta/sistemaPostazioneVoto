@@ -16,6 +16,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
 
 MainWindowPV::~MainWindowPV()
 {
+    delete pv;
     delete ui;
 }
 

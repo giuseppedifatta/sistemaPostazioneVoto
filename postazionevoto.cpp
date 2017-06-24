@@ -44,12 +44,14 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
     this->pv_client = new SSLClient();
-    const char * postazioneSeggio = "127.0.0.1"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
+
+    const char * postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
     cout << "SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
     cout << "SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
+    delete this->pv_client;
 }
 
 unsigned int PostazioneVoto::getStatoPV(){
@@ -93,12 +95,14 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
 void PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
     if(this->HTAssociato == 0){
         this->HTAssociato = tokenCod;
+
         //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
         mainWindow->mostraInterfacciaAbilitazioneWithOTP();
         this->setStatoPV(this->statiPV::attesa_abilitazione);
     }
     else{
-        cerr << "un ht è già associato alla postazione di voto, impossibile associarne un altro!" << endl;
+        cout << "Resetto l'ht della postazione" << endl;
+        this->HTAssociato = tokenCod;
     }
 }
 

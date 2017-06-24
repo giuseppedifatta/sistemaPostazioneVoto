@@ -82,7 +82,7 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
 
-
+    delete [] charArray_idPV;
 
     stringstream ss1;
     ss1 << statoPV;
@@ -90,7 +90,7 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     cout << "statoPV: " <<charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
-
+    delete [] charArray_statoPV;
 
     BIO_printf(outbio, "Finished SSL/TLS connection with server: %s.\n",
                hostnameSeggio);
@@ -175,7 +175,7 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
                    hostIP /*hostname*/, address_printable, portCod);
 
     }
-
+    delete [] address_printable;
     cout << "Descrittore socket: "<< server_sock << endl;
     return res;
 }
@@ -185,6 +185,8 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
 
 
     int res = create_socket(hostIP /*hostname*/,port);
+
+    delete [] port;
     if (res == 0){
         BIO_printf(this->outbio,
                    "Successfully create the socket for TCP connection to: %s.\n",
@@ -248,6 +250,8 @@ void SSLClient::ShowCerts() {
         X509_free(peer_cert);
     } else
         printf("No certificates.\n");
+
+    delete [] line;
 }
 
 void SSLClient::configure_context(char* CertFile, char* KeyFile, char * ChainFile) {
@@ -331,6 +335,8 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
 
     ret = X509_STORE_load_locations(store, chainFile, NULL);
+
+
     if (ret != 1)
         BIO_printf(this->outbio, "Error loading CA cert or chain file\n");
 
