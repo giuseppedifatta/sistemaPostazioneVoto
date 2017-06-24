@@ -29,6 +29,7 @@ public:
     ~MainWindowPV();
 
     void mostraInterfacciaAbilitazioneWithOTP();
+    void mostraInterfacciaPostazioneAttiva();
 private slots:
     void on_exit_button_clicked();
 

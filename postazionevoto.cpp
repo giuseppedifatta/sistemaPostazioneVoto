@@ -10,8 +10,8 @@
 
 using namespace std;
 
-PostazioneVoto::PostazioneVoto(MainWindowPV *pv) {
-    mainWindow = pv;
+PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
+    mainWindow = m;
     HTAssociato = 0;
     ivCBC = 0;
     symKeyAES = 0;
@@ -50,6 +50,10 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     cout << "SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
+}
+
+unsigned int PostazioneVoto::getStatoPV(){
+    return (int) this->statoPV;
 }
 
 string PostazioneVoto::getStatoPostazioneAsString() {
@@ -151,4 +155,8 @@ void PostazioneVoto::runServerListenSeggio(){
     // il thread che eseguiva la funzione termina se la funzione arriva alla fine
     return;
 
+}
+
+void PostazioneVoto::backToPostazioneAttiva(){
+    mainWindow->mostraInterfacciaPostazioneAttiva();
 }

@@ -26,7 +26,7 @@ class MainWindowPV;
 
 class PostazioneVoto {
 public:
-    PostazioneVoto(MainWindowPV *pv);
+    PostazioneVoto(MainWindowPV *m);
     virtual ~PostazioneVoto();
     bool smartCardIsOn();
     enum statiPV {
@@ -39,6 +39,7 @@ public:
         offline
     };
     void setStatoPV(statiPV nuovoStato);
+    unsigned int getStatoPV();
 
     //metodi per la visualizzazione delle schermate
     void mostraSchede(XMLDocument *pschedeVoto);
@@ -52,6 +53,7 @@ public:
     //dati membro
 
      void setHTAssociato(unsigned int tokenCod);
+     void backToPostazioneAttiva();
 private:
     MainWindowPV *mainWindow;
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"

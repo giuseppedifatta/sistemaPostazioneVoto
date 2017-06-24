@@ -169,10 +169,6 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
             default:
                 cerr << "codice servizio non valido" << endl;
             }
-
-
-            //avvio del servizio richiesto
-
         }
         else{
             cerr << "PV_Server: errore lettura del codice di servizio" <<endl;
@@ -205,7 +201,7 @@ void SSLServer::service(servizi servizio) {
 
     case servizi::setAssociation:{
 
-        //work in progres...
+
         unsigned int idHT;
 
         bytes = SSL_read(ssl, buf, sizeof(buf));
@@ -226,8 +222,35 @@ void SSLServer::service(servizi servizio) {
     }
     case servizi::pullPVState:
         break;
-    case servizi::removeAssociation:
+    case servizi::removeAssociation:{
+        int success = -1;
+        if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione) || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
+            //TODO imposta stato postazione a libera
+            pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
+
+            //settiamo il valore 0 in caso di operazione riuscita
+            success = 0;
+            pvChiamante->mutex_stdout.lock();
+            cout << "PV_Server: associazione rimossa!! "<< endl;
+            pvChiamante->mutex_stdout.unlock();
+
+            //mostrare sulla postazione di voto la schermata di postazione libera
+            pvChiamante->backToPostazioneAttiva();
+
+
+
+        }
+
+        //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
+        stringstream ss;
+        ss << success;
+        string str = ss.str();
+        cout << "removeAssociation: return value to Seggio: " << success << endl;
+        const char * successValue = str.c_str();
+        SSL_write(ssl,successValue,strlen(successValue));
+
         break;
+    }
     case servizi::freePV:
         break;
 

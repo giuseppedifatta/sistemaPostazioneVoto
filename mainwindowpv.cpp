@@ -46,3 +46,7 @@ void MainWindowPV::on_attiva_button_clicked()
 void MainWindowPV::mostraInterfacciaAbilitazioneWithOTP(){
     ui->stackedWidget->setCurrentIndex(InterfacciePV::abilitazione);
 }
+
+void MainWindowPV::mostraInterfacciaPostazioneAttiva(){
+    ui->stackedWidget->setCurrentIndex(InterfacciePV::disponibile);
+}
