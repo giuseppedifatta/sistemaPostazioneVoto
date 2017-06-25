@@ -28,7 +28,6 @@ class PostazioneVoto {
 public:
     PostazioneVoto(MainWindowPV *m);
     virtual ~PostazioneVoto();
-    bool smartCardIsOn();
     enum statiPV {
         attesa_attivazione,
         libera,

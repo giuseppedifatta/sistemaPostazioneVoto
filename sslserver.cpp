@@ -100,7 +100,7 @@ void SSLServer::ascoltaSeggio(){
     else{
         //termina l'ascolto
         pvChiamante->mutex_stdout.lock();
-        cout << "Server: interruzione del server in corso...client?... ora attaccati a sto cazzo :P" << endl;
+        cout << "Server: interruzione del server in corso..." << endl;
         pvChiamante->mutex_stdout.unlock();
         int ab = close(client_sock);
         if(ab ==0){

@@ -24,6 +24,7 @@ using namespace std;
 
 
 SSLClient::SSLClient(){
+    this->server_sock = 0;
     /* ---------------------------------------------------------- *
      * Create the Input/Output BIO's.                             *
      * ---------------------------------------------------------- */
@@ -55,7 +56,7 @@ SSLClient::SSLClient(){
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
 
     this->configure_context(certFile, keyFile, chainFile);
-    cout << "Cert and key configured" << endl;
+    cout << "Costruttore Client: Cert and key configured" << endl;
 }
 
 SSLClient::~SSLClient(){
@@ -65,6 +66,8 @@ SSLClient::~SSLClient(){
 
     SSL_CTX_free(this->ctx);
     BIO_free_all(outbio);
+
+    this->cleanup_openssl();
 
 }
 
@@ -82,7 +85,7 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
 
-    delete [] charArray_idPV;
+
 
     stringstream ss1;
     ss1 << statoPV;
@@ -90,13 +93,18 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     cout << "statoPV: " <<charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
-    delete [] charArray_statoPV;
+
 
     BIO_printf(outbio, "Finished SSL/TLS connection with server: %s.\n",
                hostnameSeggio);
-    close(this->server_sock);
+
     SSL_shutdown(this->ssl);
     SSL_free(this->ssl);
+    this->ssl = nullptr;
+
+    close(this->server_sock);
+    this->server_sock = 0;
+
 }
 
 void SSLClient::init_openssl_library() {
@@ -175,7 +183,7 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
                    hostIP /*hostname*/, address_printable, portCod);
 
     }
-    delete [] address_printable;
+
     cout << "Descrittore socket: "<< server_sock << endl;
     return res;
 }
@@ -185,8 +193,8 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
 
 
     int res = create_socket(hostIP /*hostname*/,port);
+    //a questo punto la socket del server è stata creata e settata in this->server_sock
 
-    delete [] port;
     if (res == 0){
         BIO_printf(this->outbio,
                    "Successfully create the socket for TCP connection to: %s.\n",
@@ -202,7 +210,7 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
      * Create new SSL connection state object                     *
      * ---------------------------------------------------------- */
     this->ssl = SSL_new(this->ctx);
-    cout << "ConnectTo - ssl pointer: " << this->ssl << endl;
+    //cout << "ConnectTo: " << this->ssl << endl;
     /* ---------------------------------------------------------- *
      * Make the underlying TCP socket connection                  *
      * ---------------------------------------------------------- */
@@ -215,7 +223,7 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
         BIO_printf(this->outbio, "Error: Connection to %s failed", hostIP /*hostname*/);
     }
     else
-        BIO_printf(this->outbio, "Ok: Connection to %s /n", hostIP /*hostname*/);
+        BIO_printf(this->outbio, "Ok: Connection to %s \n", hostIP /*hostname*/);
     /* ---------------------------------------------------------- *
      * Try to SSL-connect here, returns 1 for success             *
      * ---------------------------------------------------------- */
@@ -251,7 +259,7 @@ void SSLClient::ShowCerts() {
     } else
         printf("No certificates.\n");
 
-    delete [] line;
+
 }
 
 void SSLClient::configure_context(char* CertFile, char* KeyFile, char * ChainFile) {
@@ -373,6 +381,10 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
     X509_free(peer_cert);
     BIO_free_all(certbio);
 
+}
+
+void SSLClient::cleanup_openssl(){
+    EVP_cleanup();
 }
 
 

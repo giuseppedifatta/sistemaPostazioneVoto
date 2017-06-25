@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "postazionevoto.h"
+#include <QObject>
 class PostazioneVoto;
 namespace Ui {
 class MainWindowPV;

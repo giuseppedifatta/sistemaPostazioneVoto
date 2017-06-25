@@ -20,6 +20,7 @@ private:
     void ShowCerts();
     void configure_context(char* CertFile, char* KeyFile, char * ChainFile);
     void verify_ServerCert(const char * hostname);
+    void cleanup_openssl();
 public:
     SSLClient();
     ~SSLClient();

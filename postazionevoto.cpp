@@ -23,12 +23,17 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     //connessione all'urna e richiesta di questi dati
     pSchedeVoto = NULL;
     publicKeyRP = 0;
+    //init client
+    this->pv_client = new SSLClient();
+
 
     this->setStatoPV(statiPV::attesa_attivazione);
 }
 
 PostazioneVoto::~PostazioneVoto() {
     // TODO Auto-generated destructor stub
+    server_thread.join();
+    delete this->pv_client;
 }
 
 bool PostazioneVoto::PostazioneVoto::offlinePV() {
@@ -43,15 +48,15 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
 
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
-    this->pv_client = new SSLClient();
+
 
     const char * postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
-    cout << "SSL pointer pre-connect: " << this->pv_client->ssl << endl;
+    cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
-    cout << "SSL pointer post-connect: " << this->pv_client->ssl << endl;
+    cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
-    delete this->pv_client;
+
 }
 
 unsigned int PostazioneVoto::getStatoPV(){
@@ -98,7 +103,9 @@ void PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
 
         //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
         mainWindow->mostraInterfacciaAbilitazioneWithOTP();
+        cout << "aggiorno lo stato della postazione di voto..." << endl;
         this->setStatoPV(this->statiPV::attesa_abilitazione);
+        cout << "stato postazione di voto aggiornato." << endl;
     }
     else{
         cout << "Resetto l'ht della postazione" << endl;
@@ -147,7 +154,7 @@ bool PostazioneVoto::enablingPV() {
 void PostazioneVoto::runServerListenSeggio(){
     this->pv_server = new SSLServer(this);
     this->mutex_stdout.lock();
-    cout << "avvio del pv_server per rispondere alle richieste del seggio" << endl;
+    cout << "PV: avvio del pv_server per rispondere alle richieste del seggio" << endl;
     this->mutex_stdout.unlock();
     while(1){
         this->pv_server->ascoltaSeggio();
