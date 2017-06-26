@@ -101,7 +101,7 @@ void SSLServer::ascoltaSeggio(){
         //termina l'ascolto
         pvChiamante->mutex_stdout.lock();
         cout << "Server: interruzione del server in corso..." << endl;
-        pvChiamante->mutex_stdout.unlock();
+
         int ab = close(client_sock);
         if(ab ==0){
             cout << "successo chiusura socket per il client" << endl;
@@ -110,6 +110,7 @@ void SSLServer::ascoltaSeggio(){
         if(ab ==0){
             cout << "successo chiusura socket del listener" << endl;
         }
+        pvChiamante->mutex_stdout.unlock();
         return;
     }
 
@@ -245,7 +246,9 @@ void SSLServer::service(servizi servizio) {
         stringstream ss;
         ss << success;
         string str = ss.str();
+        pvChiamante->mutex_stdout.lock();
         cout << "removeAssociation: return value to Seggio: " << success << endl;
+        pvChiamante->mutex_stdout.unlock();
         const char * successValue = str.c_str();
         SSL_write(ssl,successValue,strlen(successValue));
 
@@ -283,8 +286,9 @@ int SSLServer::openListener(int s_port) {
     sa_serv.sin_family = AF_INET;
     sa_serv.sin_addr.s_addr = INADDR_ANY;
     sa_serv.sin_port = htons(s_port); /* Server Port number */
+    pvChiamante->mutex_stdout.lock();
     cout<<"Server: Server's Port: "<< ntohs(sa_serv.sin_port)<<endl;
-
+    pvChiamante->mutex_stdout.unlock();
     r = bind(this->listen_sock, (struct sockaddr*) &sa_serv, sizeof(sa_serv));
     if (r < 0) {
         perror("Unable to bind");
@@ -396,8 +400,9 @@ void SSLServer::print_cn_name(const char* label, X509_NAME* const name) {
         if (!utf8 || !(length > 0))
             break; /* failed */
 
-
+        pvChiamante->mutex_stdout.lock();
         cout << "Server:   " << label << ": " << utf8 << endl;
+        pvChiamante->mutex_stdout.unlock();
         success = 1;
 
     } while (0);
@@ -454,7 +459,9 @@ void SSLServer::print_san_name(const char* label, X509* const cert) {
                 // Another policy would be to fails since it probably
                 // indicates the client is under attack.
                 if (utf8 && len1 && len2 && (len1 == len2)) {
+                    pvChiamante->mutex_stdout.lock();
                     cout << "Server:   " << label << ": " << utf8 << endl;
+                    pvChiamante->mutex_stdout.unlock();
                     success = 1;
                 }
 
@@ -494,7 +501,7 @@ int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
     pvChiamante->mutex_stdout.lock();
     cout << "Server: verify_callback (depth=" << depth << ")(preverify=" << preverify
          << ")" << endl;
-
+    pvChiamante->mutex_stdout.unlock();
     /* Issuer is the authority we trust that warrants nothing useful */
     print_cn_name("Issuer (cn)", iname);
 
@@ -507,7 +514,7 @@ int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
     }
 
 
-
+    pvChiamante->mutex_stdout.lock();
     if (preverify == 0) {
         if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY){
 
