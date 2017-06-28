@@ -50,10 +50,10 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //iniziare una sessione ssl con la postazione di voto
 
 
-    const char * postazioneSeggio = "127.0.0.1"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
-    cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
+    const char * postazioneSeggio = "192.168.56.101"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+    cout << "PV: PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
-    cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
+    cout << "PV: PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
 
@@ -103,12 +103,12 @@ void PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
 
         //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
         //mainWindow->mostraInterfacciaAbilitazioneWithOTP();
-        cout << "aggiorno lo stato della postazione di voto..." << endl;
+        cout << "PV: aggiorno lo stato della postazione di voto..." << endl;
         this->setStatoPV(this->statiPV::attesa_abilitazione);
-        cout << "stato postazione di voto aggiornato." << endl;
+        cout << "PV: stato postazione di voto aggiornato." << endl;
     }
     else{
-        cout << "Resetto l'ht della postazione" << endl;
+        cout << "PV: Resetto l'ht della postazione" << endl;
         this->HTAssociato = tokenCod;
     }
 }
@@ -154,13 +154,13 @@ bool PostazioneVoto::enablingPV() {
 void PostazioneVoto::runServerListenSeggio(){
     this->pv_server = new SSLServer(this);
     this->mutex_stdout.lock();
-    cout << "PV: avvio del pv_server per rispondere alle richieste del seggio" << endl;
+    cout << "PV: PV: avvio del pv_server per rispondere alle richieste del seggio" << endl;
     this->mutex_stdout.unlock();
     while(1){
         this->pv_server->ascoltaSeggio();
     }
     this->mutex_stdout.lock();
-    cout << "runServerListenSeggio: exit!" << endl;
+    cout << "PV: runServerListenSeggio: exit!" << endl;
     this->mutex_stdout.unlock();
 
     // il thread che eseguiva la funzione termina se la funzione arriva alla fine

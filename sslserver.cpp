@@ -44,7 +44,7 @@ SSLServer::SSLServer(PostazioneVoto *pv){
     configure_context(certFile, keyFile, chainFile);
 
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: Cert and key configured" << endl;
+    cout << "ServerPV:  Cert and key configured" << endl;
     pvChiamante->mutex_stdout.unlock();
 
 
@@ -70,7 +70,7 @@ void SSLServer::ascoltaSeggio(){
     uint len = sizeof(client_addr);
 
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: server_pv in ascolto sulla porta " << PORT <<", attesa connessione da un client PV...\n";
+    cout << "ServerPV: in ascolto sulla porta " << PORT << ", attesa connessione da un client PV...\n";
     pvChiamante->mutex_stdout.unlock();
 
     // accept restituisce un valore negativo in caso di insuccesso
@@ -82,8 +82,8 @@ void SSLServer::ascoltaSeggio(){
     }
     else{
         pvChiamante->mutex_stdout.lock();
-        cout << "Server: Un client ha iniziato la connessione su una socket con fd:" << client_sock << endl;
-        cout<<"Server: Client's Port assegnata: "<< ntohs(client_addr.sin_port)<< endl;
+        cout << "ServerPV:  Un client ha iniziato la connessione su una socket con fd:" << client_sock << endl;
+        cout << "ServerPV:  Client's Port assegnata: "<< ntohs(client_addr.sin_port)<< endl;
         pvChiamante->mutex_stdout.unlock();
 
     }
@@ -94,21 +94,21 @@ void SSLServer::ascoltaSeggio(){
         thread t (&SSLServer::Servlet, this, client_sock);
         t.detach();
         pvChiamante->mutex_stdout.lock();
-        cout << "Server: start a thread..." << endl;
+        cout << "ServerPV:  start a thread..." << endl;
         pvChiamante->mutex_stdout.unlock();
     }
     else{
         //termina l'ascolto
         pvChiamante->mutex_stdout.lock();
-        cout << "Server: interruzione del server in corso..." << endl;
+        cout << "ServerPV:  interruzione del server in corso..." << endl;
 
         int ab = close(client_sock);
         if(ab ==0){
-            cout << "successo chiusura socket per il client" << endl;
+            cout << "ServerPV: successo chiusura socket per il client" << endl;
         }
         ab = close(this->listen_sock);
         if(ab ==0){
-            cout << "successo chiusura socket del listener" << endl;
+            cout << "ServerPV: successo chiusura socket del listener" << endl;
         }
         pvChiamante->mutex_stdout.unlock();
         return;
@@ -118,7 +118,7 @@ void SSLServer::ascoltaSeggio(){
 
 void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable */
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: Servlet: inizio servlet" << endl;
+    cout << "ServerPV:  Servlet: inizio servlet" << endl;
     pvChiamante->mutex_stdout.unlock();
 
     //collega sessione ssl alla socket assegnata al client
@@ -126,19 +126,19 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
 
 
     if (SSL_accept(this->ssl) <= 0) {/* do SSL-protocol handshake */
-        cout << "PV_Server: error in handshake" << endl;
+        cout << "ServerPV: PV_Server: error in handshake" << endl;
         ERR_print_errors_fp(stderr);
 
     }
     else {
         pvChiamante->mutex_stdout.lock();
-        cout << "PV_Server: handshake ok!" << endl;
+        cout << "ServerPV: PV_Server: handshake ok!" << endl;
         pvChiamante->mutex_stdout.unlock();
         this->ShowCerts();
         this->verify_ClientCert();
 
         pvChiamante->mutex_stdout.lock();
-        cout << "PV_Server: ricevo l'identificativo del servizio richiesto..." << endl;
+        cout << "ServerPV: PV_Server: ricevo l'identificativo del servizio richiesto..." << endl;
         pvChiamante->mutex_stdout.unlock();
 
         //ricezione codice del servizio richiesto
@@ -177,19 +177,19 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
     }
     int sd;
     sd = SSL_get_fd(this->ssl); /* get socket connection */
-    //cout << "Server: What's up?" << endl;
+    //cout << "ServerPV:  What's up?" << endl;
     close(sd); /* close connection */
     SSL_free(this->ssl);
 
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: fine servlet" << endl;
+    cout << "ServerPV:  fine servlet" << endl;
     pvChiamante->mutex_stdout.unlock();
     close(client_sock);
 }
 
 void SSLServer::service(servizi servizio) {
     pvChiamante->mutex_stdout.lock();
-    cout << "PV_Server: service started: " << servizio << endl;
+    cout << "ServerPV: PV_Server: service started: " << servizio << endl;
     pvChiamante->mutex_stdout.unlock();
     char buf[1024];
 
@@ -210,7 +210,7 @@ void SSLServer::service(servizi servizio) {
             buf[bytes] = 0;
             idHT = atoi(buf);
             pvChiamante->mutex_stdout.lock();
-            cout << "PV_Server: ht da settare: " << idHT << endl;
+            cout << "ServerPV: PV_Server: ht da settare: " << idHT << endl;
             pvChiamante->mutex_stdout.unlock();
             pvChiamante->setHTAssociato(idHT);
 
@@ -232,7 +232,7 @@ void SSLServer::service(servizi servizio) {
             //settiamo il valore 0 in caso di operazione riuscita
             success = 0;
             pvChiamante->mutex_stdout.lock();
-            cout << "PV_Server: associazione rimossa!! "<< endl;
+            cout << "ServerPV: PV_Server: associazione rimossa!! "<< endl;
             pvChiamante->mutex_stdout.unlock();
 
             //mostrare sulla postazione di voto la schermata di postazione libera
@@ -247,7 +247,7 @@ void SSLServer::service(servizi servizio) {
         ss << success;
         string str = ss.str();
         pvChiamante->mutex_stdout.lock();
-        cout << "removeAssociation: return value to Seggio: " << success << endl;
+        cout << "ServerPV: removeAssociation: return value to Seggio: " << success << endl;
         pvChiamante->mutex_stdout.unlock();
         const char * successValue = str.c_str();
         SSL_write(ssl,successValue,strlen(successValue));
@@ -287,7 +287,7 @@ int SSLServer::openListener(int s_port) {
     sa_serv.sin_addr.s_addr = INADDR_ANY;
     sa_serv.sin_port = htons(s_port); /* Server Port number */
     pvChiamante->mutex_stdout.lock();
-    cout<<"Server: Server's Port: "<< ntohs(sa_serv.sin_port)<<endl;
+    cout << "ServerPV:  Server's Port: "<< ntohs(sa_serv.sin_port)<<endl;
     pvChiamante->mutex_stdout.unlock();
     r = bind(this->listen_sock, (struct sockaddr*) &sa_serv, sizeof(sa_serv));
     if (r < 0) {
@@ -321,7 +321,7 @@ void SSLServer::createServerContext() {
     const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
     long old_opts = SSL_CTX_set_options(this->ctx, flags);
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: bitmask options: " << old_opts << endl;
+    cout << "ServerPV:  bitmask options: " << old_opts << endl;
     pvChiamante->mutex_stdout.unlock();
     //return ctx;
 }
@@ -401,7 +401,7 @@ void SSLServer::print_cn_name(const char* label, X509_NAME* const name) {
             break; /* failed */
 
         pvChiamante->mutex_stdout.lock();
-        cout << "Server:   " << label << ": " << utf8 << endl;
+        cout << "ServerPV:    " << label << ": " << utf8 << endl;
         pvChiamante->mutex_stdout.unlock();
         success = 1;
 
@@ -412,7 +412,7 @@ void SSLServer::print_cn_name(const char* label, X509_NAME* const name) {
     pvChiamante->mutex_stdout.lock();
     if (!success){
 
-        cout << "Server:   " << label << ": <not available>" << endl;
+        cout << "ServerPV:    " << label << ": <not available>" << endl;
     }
     pvChiamante->mutex_stdout.unlock();
 }
@@ -460,7 +460,7 @@ void SSLServer::print_san_name(const char* label, X509* const cert) {
                 // indicates the client is under attack.
                 if (utf8 && len1 && len2 && (len1 == len2)) {
                     pvChiamante->mutex_stdout.lock();
-                    cout << "Server:   " << label << ": " << utf8 << endl;
+                    cout << "ServerPV:    " << label << ": " << utf8 << endl;
                     pvChiamante->mutex_stdout.unlock();
                     success = 1;
                 }
@@ -483,14 +483,14 @@ void SSLServer::print_san_name(const char* label, X509* const cert) {
 
     if (!success){
         pvChiamante->mutex_stdout.lock();
-        cout << "Server:   " << label << ": <not available>\n" << endl;
+        cout << "ServerPV:    " << label << ": <not available>\n" << endl;
         pvChiamante->mutex_stdout.unlock();
     }
 }
 
 int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
 
-    /*cout << "Server: preverify value: " << preverify <<endl;*/
+    /*cout << "ServerPV:  preverify value: " << preverify <<endl;*/
     int depth = X509_STORE_CTX_get_error_depth(x509_ctx);
     int err = X509_STORE_CTX_get_error(x509_ctx);
 
@@ -499,7 +499,7 @@ int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
     X509_NAME* sname = cert ? X509_get_subject_name(cert) : NULL;
 
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: verify_callback (depth=" << depth << ")(preverify=" << preverify
+    cout << "ServerPV:  verify_callback (depth=" << depth << ")(preverify=" << preverify
          << ")" << endl;
     pvChiamante->mutex_stdout.unlock();
     /* Issuer is the authority we trust that warrants nothing useful */
@@ -518,30 +518,30 @@ int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
     if (preverify == 0) {
         if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY){
 
-            cout << "Server:   Error = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY\n";
+            cout << "ServerPV:    Error = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY\n";
         }
         else if (err == X509_V_ERR_CERT_UNTRUSTED){
 
-            cout << "Server:   Error = X509_V_ERR_CERT_UNTRUSTED\n";
+            cout << "ServerPV:    Error = X509_V_ERR_CERT_UNTRUSTED\n";
         }
         else if (err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN){
 
-            cout << "Server:   Error = X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN\n";}
+            cout << "ServerPV:    Error = X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN\n";}
         else if (err == X509_V_ERR_CERT_NOT_YET_VALID) {
 
-            cout << "Server:   Error = X509_V_ERR_CERT_NOT_YET_VALID\n";
+            cout << "ServerPV:    Error = X509_V_ERR_CERT_NOT_YET_VALID\n";
         }
         else if (err == X509_V_ERR_CERT_HAS_EXPIRED){
 
-            cout << "Server:   Error = X509_V_ERR_CERT_HAS_EXPIRED\n";
+            cout << "ServerPV:    Error = X509_V_ERR_CERT_HAS_EXPIRED\n";
         }
         else if (err == X509_V_OK){
 
-            cout << "Server:   Error = X509_V_OK\n";
+            cout << "ServerPV:    Error = X509_V_OK\n";
         }
         else{
 
-            cout << "Server:   Error = " << err << "\n";
+            cout << "ServerPV:    Error = " << err << "\n";
         }
     }
     pvChiamante->mutex_stdout.unlock();
@@ -562,7 +562,7 @@ void SSLServer::cleanup_openssl() {
 }
 
 void SSLServer::ShowCerts() {
-    BIO * outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
+
     X509 *cert = NULL;
     char *line = NULL;
     cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
@@ -570,19 +570,19 @@ void SSLServer::ShowCerts() {
     pvChiamante->mutex_stdout.lock();
     ERR_print_errors_fp(stderr);
     if (cert != NULL) {
-        BIO_printf(outbio,"Client certificates:\n");
+        BIO_printf(this->outbio, "SeggioPV:Client certificates:\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        BIO_printf(outbio,"Subject: %s\n", line);
+        BIO_printf(this->outbio, "SeggioPV:Subject: %s\n", line);
         free(line);
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        BIO_printf(outbio,"Issuer: %s\n", line);
+        BIO_printf(this->outbio, "SeggioPV:Issuer: %s\n", line);
         free(line);
 
     } else
-        BIO_printf(outbio,"No certificates.\n");
+        BIO_printf(this->outbio, "SeggioPV:No certificates.\n");
     pvChiamante->mutex_stdout.unlock();
     X509_free(cert);
-    BIO_free_all(outbio);
+
 }
 
 void SSLServer::verify_ClientCert() {
@@ -595,10 +595,10 @@ void SSLServer::verify_ClientCert() {
     X509_NAME *certsubject = NULL;
     X509_STORE *store = NULL;
     X509_STORE_CTX *vrfy_ctx = NULL;
-    BIO *outbio = NULL,*certbio = NULL;
+    //BIO *certbio = NULL;
     X509_NAME *certname = NULL;
-    outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
-    certbio = BIO_new(BIO_s_file());
+
+    //certbio = BIO_new(BIO_s_file());
 
     /* ---------------------------------------------------------- *
      * Get the remote certificate into the X509 structure         *
@@ -607,12 +607,12 @@ void SSLServer::verify_ClientCert() {
     pvChiamante->mutex_stdout.lock();
     if (cert == NULL){
 
-        BIO_printf(outbio, "Server: Server: Error: Could not get a certificate \n"
+        BIO_printf(this->outbio, "Server: Server: Error: Could not get a certificate \n"
                    /*,hostname*/);
     }
     else{
 
-        BIO_printf(outbio, "Server: Retrieved the client's certificate \n"
+        BIO_printf(this->outbio, "Server: Retrieved the client's certificate \n"
                    /*,hostname*/);
     }
     pvChiamante->mutex_stdout.unlock();
@@ -626,16 +626,16 @@ void SSLServer::verify_ClientCert() {
      * display the cert subject here                              *
      * -----------------------------------------------------------*/
     pvChiamante->mutex_stdout.lock();
-    BIO_printf(outbio, "Server: Displaying the certificate subject data:\n");
-    X509_NAME_print_ex(outbio, certname, 0, 0);
-    BIO_printf(outbio, "\n");
+    BIO_printf(this->outbio, "Server: Displaying the certificate subject data:\n");
+    X509_NAME_print_ex(this->outbio, certname, 0, 0);
+    BIO_printf(this->outbio, "\n");
     pvChiamante->mutex_stdout.unlock();
     /* ---------------------------------------------------------- *
      * Initialize the global certificate validation store object. *
      * ---------------------------------------------------------- */
     if (!(store = X509_STORE_new())){
         pvChiamante->mutex_stdout.lock();
-        BIO_printf(outbio, "Server: Error creating X509_STORE_CTX object\n");
+        BIO_printf(this->outbio, "Server: Error creating X509_STORE_CTX object\n");
         pvChiamante->mutex_stdout.unlock();
     }
 
@@ -651,14 +651,14 @@ void SSLServer::verify_ClientCert() {
     /*
          ret = BIO_read_filename(certbio, certFile);
          if (!(cert = PEM_read_bio_X509(certbio, NULL, 0, NULL)))
-         BIO_printf(outbio, "Server: Error loading cert into memory\n");
+         BIO_printf(this->outbio, "Server: Error loading cert into memory\n");
          */
     char chainFile[] =
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
 
     ret = X509_STORE_load_locations(store, chainFile, NULL);
     if (ret != 1){
-        BIO_printf(outbio, "Server: Error loading CA cert or chain file\n");
+        BIO_printf(this->outbio, "Server: Error loading CA cert or chain file\n");
     }
     /* ---------------------------------------------------------- *
      * Initialize the ctx structure for a verification operation: *
@@ -673,10 +673,10 @@ void SSLServer::verify_ClientCert() {
      * for trouble with the ctx object (i.e. missing certificate) *
      * ---------------------------------------------------------- */
     ret = X509_verify_cert(vrfy_ctx);
-    BIO_printf(outbio, "Server: Verification return code: %d\n", ret);
+    BIO_printf(this->outbio, "Server: Verification return code: %d\n", ret);
 
     if (ret == 0 || ret == 1){
-        BIO_printf(outbio, "Server: Verification result text: %s\n",
+        BIO_printf(this->outbio, "Server: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
     }
     /* ---------------------------------------------------------- *
@@ -688,9 +688,9 @@ void SSLServer::verify_ClientCert() {
         error_cert = X509_STORE_CTX_get_current_cert(vrfy_ctx);
         certsubject = X509_NAME_new();
         certsubject = X509_get_subject_name(error_cert);
-        BIO_printf(outbio, "Server: Verification failed cert:\n");
-        X509_NAME_print_ex(outbio, certsubject, 0, XN_FLAG_MULTILINE);
-        BIO_printf(outbio, "\n");
+        BIO_printf(this->outbio, "Server: Verification failed cert:\n");
+        X509_NAME_print_ex(this->outbio, certsubject, 0, XN_FLAG_MULTILINE);
+        BIO_printf(this->outbio, "\n");
     }
 
     /* ---------------------------------------------------------- *
@@ -699,10 +699,10 @@ void SSLServer::verify_ClientCert() {
     X509_STORE_CTX_free(vrfy_ctx);
     X509_STORE_free(store);
     X509_free(cert);
-    BIO_free_all(certbio);
-    BIO_free_all(outbio);
+    //BIO_free_all(certbio);
+
     pvChiamante->mutex_stdout.lock();
-    cout << "Server: Fine --Verify Client Cert --" << endl;
+    cout << "ServerPV:  Fine --Verify Client Cert --" << endl;
     pvChiamante->mutex_stdout.unlock();
 }
 
@@ -720,15 +720,15 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
         char * buffer = new char[length];
 
-        cout << "Server: Reading " << length << " characters... ";
+        cout << "ServerPV:  Reading " << length << " characters... ";
         // read data as a block:
         is.read(buffer, length);
 
         if (is){
-            cout << "Server: all characters read successfully." << endl;
+            cout << "ServerPV:  all characters read successfully." << endl;
         }
         else{
-            cout << "Server: error: only " << is.gcount() << " could be read";
+            cout << "ServerPV:  error: only " << is.gcount() << " could be read";
         }
         is.close();
 
@@ -738,7 +738,7 @@ int SSLServer::myssl_fwrite(const char * infile) {
         strs << length;
         string temp_str = strs.str();
         const char *info = temp_str.c_str();
-        cout << "Server: bytes to send:" << info << endl;
+        cout << "ServerPV:  bytes to send:" << info << endl;
         SSL_write(ssl, info, strlen(info));
         SSL_write(ssl, buffer, length);
         delete[] buffer;
@@ -746,7 +746,7 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
     }
     else{
-        cout << "Server: file unreadable" << endl;
+        cout << "ServerPV:  file unreadable" << endl;
     }
     return 0;
 }

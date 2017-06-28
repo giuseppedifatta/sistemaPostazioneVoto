@@ -10,10 +10,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <openssl/ssl.h>
-#include <openssl/conf.h>
 #include <unistd.h>
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -43,7 +40,7 @@ SSLClient::SSLClient(){
      * Try to create a new SSL context                            *
      * ---------------------------------------------------------- */
     if ((this->ctx = SSL_CTX_new(method)) == NULL)
-        BIO_printf(this->outbio, "Unable to create a new SSL context structure.\n");
+        BIO_printf(this->outbio, "ClientPV: Unable to create a new SSL context structure.\n");
 
     /* ---------------------------------------------------------- *
      * Disabling SSLv2 and SSLv3 will leave TSLv1 for negotiation    *
@@ -56,7 +53,7 @@ SSLClient::SSLClient(){
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
 
     this->configure_context(certFile, keyFile, chainFile);
-    cout << "Costruttore Client: Cert and key configured" << endl;
+    cout << "ClientPV:Costruttore Client: Cert and key configured" << endl;
 }
 
 SSLClient::~SSLClient(){
@@ -65,7 +62,7 @@ SSLClient::~SSLClient(){
      * -----------------------------------------------------------*/
 
     SSL_CTX_free(this->ctx);
-    BIO_free_all(outbio);
+    BIO_free_all(this->outbio);
 
     this->cleanup_openssl();
 
@@ -73,15 +70,15 @@ SSLClient::~SSLClient(){
 
 void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int idPV, unsigned int statoPV){
     //comunica al seggio come è cambiato lo stato della postazione di voto.
-    //cout << "Try to update..." << endl;
+    //cout << "ClientPV:Try to update..." << endl;
 
     stringstream ss;
     ss << idPV;
     string str= ss.str();
     const char * charArray_idPV = str.c_str();
-    cout << "idPV to update: " << charArray_idPV << endl;
-   // cout << "updateStatoPVtoSeggio, ssl pointer: " << ssl << endl;
-    cout << "idPV: "<<charArray_idPV << endl;
+    cout << "ClientPV:idPV to update: " << charArray_idPV << endl;
+   // cout << "ClientPV:updateStatoPVtoSeggio, ssl pointer: " << ssl << endl;
+    cout << "ClientPV:idPV: "<<charArray_idPV << endl;
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
 
@@ -90,12 +87,12 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     stringstream ss1;
     ss1 << statoPV;
     const char *  charArray_statoPV = ss1.str().c_str();
-    cout << "statoPV: " <<charArray_statoPV << endl;
+    cout << "ClientPV:statoPV: " <<charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
 
-    BIO_printf(outbio, "Finished SSL/TLS connection with server: %s.\n",
+    BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
                hostnameSeggio);
 
     SSL_shutdown(this->ssl);
@@ -118,7 +115,7 @@ void SSLClient::init_openssl_library() {
 
     ERR_load_BIO_strings();
     /* SSL_load_error_strings loads both libssl and libcrypto strings */
-    //ERR_load_crypto_strings();
+    ERR_load_crypto_strings();
     /* Cannot fail ??? */
 
     /* OpenSSL_config may or may not be called internally, based on */
@@ -146,7 +143,7 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
     unsigned int portCod = atoi(port);
     /* decommentare la sezione se si passa alla funzione l'hostname invece dell'ip dell'host
     if ((host = gethostbyname(hostname)) == NULL) {
-        BIO_printf(this->outbio, "Error: Cannot resolve hostname %s.\n", hostname);
+        BIO_printf(this->outbio, "ClientPV: Error: Cannot resolve hostname %s.\n", hostname);
         abort();
     }
     */
@@ -176,15 +173,15 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
     int res = connect(this->server_sock, (struct sockaddr *) &dest_addr, sizeof(struct sockaddr));
 
     if (res  == -1) {
-        BIO_printf(this->outbio, "Error: Cannot connect to host %s [%s] on port %d.\n",
+        BIO_printf(this->outbio, "ClientPV: Error: Cannot connect to host %s [%s] on port %d.\n",
                    hostIP /*hostname*/, address_printable, portCod);
     } else {
-        BIO_printf(this->outbio, "Successfully connect to host %s [%s] on port %d.\n",
+        BIO_printf(this->outbio, "ClientPV: Successfully connect to host %s [%s] on port %d.\n",
                    hostIP /*hostname*/, address_printable, portCod);
 
     }
 
-    cout << "Descrittore socket: "<< server_sock << endl;
+    cout << "ClientPV:Descrittore socket: "<< server_sock << endl;
     return res;
 }
 
@@ -196,13 +193,11 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
     //a questo punto la socket del server è stata creata e settata in this->server_sock
 
     if (res == 0){
-        BIO_printf(this->outbio,
-                   "Successfully create the socket for TCP connection to: %s.\n",
+        BIO_printf(this->outbio, "ClientPV: Successfully create the socket for TCP connection to: %s.\n",
                    hostIP /*hostname*/);
     }
     else {
-        BIO_printf(this->outbio,
-                   "Unable to create the socket for TCP connection to: %s.\n",
+        BIO_printf(this->outbio, "ClientPV: Unable to create the socket for TCP connection to: %s.\n",
                    hostIP /*hostname*/);
     }
 
@@ -210,7 +205,7 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
      * Create new SSL connection state object                     *
      * ---------------------------------------------------------- */
     this->ssl = SSL_new(this->ctx);
-    //cout << "ConnectTo: " << this->ssl << endl;
+    //cout << "ClientPV:ConnectTo: " << this->ssl << endl;
     /* ---------------------------------------------------------- *
      * Make the underlying TCP socket connection                  *
      * ---------------------------------------------------------- */
@@ -220,18 +215,18 @@ SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
      * ---------------------------------------------------------- */
 
     if (SSL_set_fd(this->ssl, this->server_sock) != 1) {
-        BIO_printf(this->outbio, "Error: Connection to %s failed", hostIP /*hostname*/);
+        BIO_printf(this->outbio, "ClientPV: Error: Connection to %s failed", hostIP /*hostname*/);
     }
     else
-        BIO_printf(this->outbio, "Ok: Connection to %s \n", hostIP /*hostname*/);
+        BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", hostIP /*hostname*/);
     /* ---------------------------------------------------------- *
      * Try to SSL-connect here, returns 1 for success             *
      * ---------------------------------------------------------- */
     if (SSL_connect(this->ssl) != 1) //SSL handshake
-        BIO_printf(this->outbio, "Error: Could not build a SSL session to: %s.\n",
+        BIO_printf(this->outbio, "ClientPV: Error: Could not build a SSL session to: %s.\n",
                    hostIP /*hostname*/);
     else
-        BIO_printf(this->outbio, "Successfully enabled SSL/TLS session to: %s.\n",
+        BIO_printf(this->outbio, "ClientPV: Successfully enabled SSL/TLS session to: %s.\n",
                    hostIP /*hostname*/);
     ShowCerts();
     verify_ServerCert(hostIP /*hostname*/);
@@ -299,7 +294,7 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
     X509_STORE_CTX *vrfy_ctx = NULL;
     X509_NAME *certname = NULL;
     int ret;
-    //BIO *outbio = NULL;
+
     BIO *certbio = NULL;
     certbio = BIO_new(BIO_s_file());
 
@@ -308,10 +303,10 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
 
     peer_cert = SSL_get_peer_certificate(this->ssl);
     if (peer_cert == NULL)
-        BIO_printf(this->outbio, "Error: Could not get a certificate from: %s.\n",
+        BIO_printf(this->outbio, "ClientPV: Error: Could not get a certificate from: %s.\n",
                    hostIP /*hostname*/);
     else
-        BIO_printf(this->outbio, "Retrieved the server's certificate from: %s.\n",
+        BIO_printf(this->outbio, "ClientPV: Retrieved the server's certificate from: %s.\n",
                    hostIP /*hostname*/);
 
 
@@ -322,13 +317,13 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
 
     // display the cert subject here
 
-    BIO_printf(this->outbio, "Displaying the certificate subject data:\n");
+    BIO_printf(this->outbio, "ClientPV: Displaying the certificate subject data:\n");
     X509_NAME_print_ex(this->outbio, certname, 0, 0);
-    BIO_printf(this->outbio, "\n");
+    BIO_printf(this->outbio, "ClientPV: \n");
 
     //Initialize the global certificate validation store object.
     if (!(store = X509_STORE_new()))
-        BIO_printf(this->outbio, "Error creating X509_STORE_CTX object\n");
+        BIO_printf(this->outbio, "ClientPV: Error creating X509_STORE_CTX object\n");
 
     // Create the context structure for the validation operation.
     vrfy_ctx = X509_STORE_CTX_new();
@@ -337,7 +332,7 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
     /*
          ret = BIO_read_filename(certbio, certFile);
          if (!(cert = PEM_read_bio_X509(certbio, NULL, 0, NULL)))
-         BIO_printf(outbio, "Error loading cert into memory\n");
+         BIO_printf(this->outbio, "ClientPV: Error loading cert into memory\n");
          */
     char chainFile[] =
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
@@ -346,7 +341,7 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
 
 
     if (ret != 1)
-        BIO_printf(this->outbio, "Error loading CA cert or chain file\n");
+        BIO_printf(this->outbio, "ClientPV: Error loading CA cert or chain file\n");
 
     /* Initialize the ctx structure for a verification operation:
       Set the trusted cert store, the unvalidated cert, and any  *
@@ -357,10 +352,10 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
      * Returns 1 on success, 0 on verification failures, and -1   *
      * for trouble with the ctx object (i.e. missing certificate) */
     ret = X509_verify_cert(vrfy_ctx);
-    BIO_printf(this->outbio, "Verification return code: %d\n", ret);
+    BIO_printf(this->outbio, "ClientPV: Verification return code: %d\n", ret);
 
     if (ret == 0 || ret == 1)
-        BIO_printf(this->outbio, "Verification result text: %s\n",
+        BIO_printf(this->outbio, "ClientPV: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
 
     /* The error handling below shows how to get failure details  *
@@ -370,9 +365,9 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
         error_cert = X509_STORE_CTX_get_current_cert(vrfy_ctx);
         certsubject = X509_NAME_new();
         certsubject = X509_get_subject_name(error_cert);
-        BIO_printf(this->outbio, "Verification failed cert:\n");
+        BIO_printf(this->outbio, "ClientPV: Verification failed cert:\n");
         X509_NAME_print_ex(this->outbio, certsubject, 0, XN_FLAG_MULTILINE);
-        BIO_printf(this->outbio, "\n");
+        BIO_printf(this->outbio, "ClientPV: \n");
     }
 
     // Free up all structures need for verify certs

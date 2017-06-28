@@ -5,6 +5,7 @@
 #include <netdb.h>
 #include <openssl/ssl.h>
 #include <openssl/conf.h>
+#include <openssl/err.h>
 
 class SSLClient
 {

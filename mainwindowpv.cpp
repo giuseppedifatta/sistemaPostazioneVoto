@@ -11,7 +11,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
 {
     ui->setupUi(this);
     pv=new PostazioneVoto(this);
-    cout << "postazione avviata" << endl;
+    cout << "View: postazione avviata" << endl;
     ui->wrongPassword_label->hide();
 }
 
