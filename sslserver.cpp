@@ -7,7 +7,6 @@
 #include <mutex>
 #include <vector>
 #include <thread>
-#include <queue>
 
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -184,14 +183,16 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
     pvChiamante->mutex_stdout.lock();
     cout << "ServerPV:  fine servlet" << endl;
     pvChiamante->mutex_stdout.unlock();
-    close(client_sock);
+    //close(client_sock);
+
+
 }
 
 void SSLServer::service(servizi servizio) {
     pvChiamante->mutex_stdout.lock();
     cout << "ServerPV: PV_Server: service started: " << servizio << endl;
     pvChiamante->mutex_stdout.unlock();
-    char buf[1024];
+    char buf[128];
 
     memset(buf, '\0', sizeof(buf));
     //memset(cod_service, '\0', sizeof(cod_service));
@@ -320,9 +321,9 @@ void SSLServer::createServerContext() {
     //https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_options.html
     const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
     long old_opts = SSL_CTX_set_options(this->ctx, flags);
-    pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  bitmask options: " << old_opts << endl;
-    pvChiamante->mutex_stdout.unlock();
+//    pvChiamante->mutex_stdout.lock();
+//    cout << "ServerPV:  bitmask options: " << old_opts << endl;
+//    pvChiamante->mutex_stdout.unlock();
     //return ctx;
 }
 

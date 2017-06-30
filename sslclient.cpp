@@ -54,6 +54,8 @@ SSLClient::SSLClient(){
 
     this->configure_context(certFile, keyFile, chainFile);
     cout << "ClientPV:Costruttore Client: Cert and key configured" << endl;
+
+
 }
 
 SSLClient::~SSLClient(){
@@ -67,27 +69,74 @@ SSLClient::~SSLClient(){
     this->cleanup_openssl();
 
 }
+void SSLClient::connectTo(const char* hostIP /*hostname*/){
+   const char * port = SERVER_PORT;
+
+
+   int res = create_socket(hostIP /*hostname*/,port);
+   //a questo punto la socket del server è stata creata e settata in this->server_sock
+
+   if (res == 0){
+       BIO_printf(this->outbio, "ClientPV: Successfully create the socket for TCP connection to: %s.\n",
+                  hostIP /*hostname*/);
+   }
+   else {
+       BIO_printf(this->outbio, "ClientPV: Unable to create the socket for TCP connection to: %s.\n",
+                  hostIP /*hostname*/);
+   }
+
+   /* ---------------------------------------------------------- *
+    * Create new SSL connection state object                     *
+    * ---------------------------------------------------------- */
+   this->ssl = SSL_new(this->ctx);
+
+   //cout << "ClientPV:ConnectTo: " << this->ssl << endl;
+   /* ---------------------------------------------------------- *
+    * Make the underlying TCP socket connection                  *
+    * ---------------------------------------------------------- */
+
+   /* ---------------------------------------------------------- *
+    * Attach the SSL session to the socket descriptor            *
+    * ---------------------------------------------------------- */
+
+   if (SSL_set_fd(this->ssl, this->server_sock) != 1) {
+       BIO_printf(this->outbio, "ClientPV: Error: Connection to %s failed", hostIP /*hostname*/);
+   }
+   else
+       BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", hostIP /*hostname*/);
+   /* ---------------------------------------------------------- *
+    * Try to SSL-connect here, returns 1 for success             *
+    * ---------------------------------------------------------- */
+   if (SSL_connect(this->ssl) != 1) //SSL handshake
+       BIO_printf(this->outbio, "ClientPV: Error: Could not build a SSL session to: %s.\n",
+                  hostIP /*hostname*/);
+   else
+       BIO_printf(this->outbio, "ClientPV: Successfully enabled SSL/TLS session to: %s.\n",
+                  hostIP /*hostname*/);
+   ShowCerts();
+   verify_ServerCert(hostIP /*hostname*/);
+   //SSL_set_connect_state(this->ssl);
+
+   return;
+}
 
 void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int idPV, unsigned int statoPV){
     //comunica al seggio come è cambiato lo stato della postazione di voto.
-    //cout << "ClientPV:Try to update..." << endl;
+    cout << "ClientPV:Try to update..." << endl;
 
     stringstream ss;
     ss << idPV;
     string str= ss.str();
     const char * charArray_idPV = str.c_str();
     cout << "ClientPV:idPV to update: " << charArray_idPV << endl;
-   // cout << "ClientPV:updateStatoPVtoSeggio, ssl pointer: " << ssl << endl;
-    cout << "ClientPV:idPV: "<<charArray_idPV << endl;
+
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
-
-
 
     stringstream ss1;
     ss1 << statoPV;
     const char *  charArray_statoPV = ss1.str().c_str();
-    cout << "ClientPV:statoPV: " <<charArray_statoPV << endl;
+    cout << "ClientPV:statoPV: " << charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
@@ -95,12 +144,14 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
                hostnameSeggio);
 
-    SSL_shutdown(this->ssl);
-    SSL_free(this->ssl);
-    this->ssl = nullptr;
+//    SSL_shutdown(this->ssl);
+//    close(this->server_sock);
+//    //this->ssl = SSL_new(this->ctx);
 
-    close(this->server_sock);
-    this->server_sock = 0;
+
+
+
+    SSL_free(this->ssl);
 
 }
 
@@ -185,54 +236,6 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
     return res;
 }
 
-SSL * SSLClient::connectTo(const char* hostIP /*hostname*/){
-    const char * port = SERVER_PORT;
-
-
-    int res = create_socket(hostIP /*hostname*/,port);
-    //a questo punto la socket del server è stata creata e settata in this->server_sock
-
-    if (res == 0){
-        BIO_printf(this->outbio, "ClientPV: Successfully create the socket for TCP connection to: %s.\n",
-                   hostIP /*hostname*/);
-    }
-    else {
-        BIO_printf(this->outbio, "ClientPV: Unable to create the socket for TCP connection to: %s.\n",
-                   hostIP /*hostname*/);
-    }
-
-    /* ---------------------------------------------------------- *
-     * Create new SSL connection state object                     *
-     * ---------------------------------------------------------- */
-    this->ssl = SSL_new(this->ctx);
-    //cout << "ClientPV:ConnectTo: " << this->ssl << endl;
-    /* ---------------------------------------------------------- *
-     * Make the underlying TCP socket connection                  *
-     * ---------------------------------------------------------- */
-
-    /* ---------------------------------------------------------- *
-     * Attach the SSL session to the socket descriptor            *
-     * ---------------------------------------------------------- */
-
-    if (SSL_set_fd(this->ssl, this->server_sock) != 1) {
-        BIO_printf(this->outbio, "ClientPV: Error: Connection to %s failed", hostIP /*hostname*/);
-    }
-    else
-        BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", hostIP /*hostname*/);
-    /* ---------------------------------------------------------- *
-     * Try to SSL-connect here, returns 1 for success             *
-     * ---------------------------------------------------------- */
-    if (SSL_connect(this->ssl) != 1) //SSL handshake
-        BIO_printf(this->outbio, "ClientPV: Error: Could not build a SSL session to: %s.\n",
-                   hostIP /*hostname*/);
-    else
-        BIO_printf(this->outbio, "ClientPV: Successfully enabled SSL/TLS session to: %s.\n",
-                   hostIP /*hostname*/);
-    ShowCerts();
-    verify_ServerCert(hostIP /*hostname*/);
-    //SSL_set_connect_state(this->ssl);
-    return this->ssl;
-}
 
 
 void SSLClient::ShowCerts() {

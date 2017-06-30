@@ -27,7 +27,7 @@ public:
     ~SSLClient();
     SSL * ssl;
 
-    SSL * connectTo(const char *hostIP);
+    void connectTo(const char *hostIP);
     unsigned int getStatoPV();
     void updateStatoPVtoSeggio(const char * hostnamePV, unsigned int idPV, unsigned int statoPV);
 };
