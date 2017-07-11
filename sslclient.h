@@ -22,7 +22,8 @@ private:
     void configure_context(char* CertFile, char* KeyFile, char * ChainFile);
     void verify_ServerCert(const char * hostname);
     void cleanup_openssl();
-public:
+
+    public:
     SSLClient();
     ~SSLClient();
     SSL * ssl;
@@ -30,6 +31,8 @@ public:
     void connectTo(const char *hostIP);
     unsigned int getStatoPV();
     void updateStatoPVtoSeggio(const char * hostnamePV, unsigned int idPV, unsigned int statoPV);
+    void stopLocalServer(const char* localhost/*hostname*/);
+
 };
 
 

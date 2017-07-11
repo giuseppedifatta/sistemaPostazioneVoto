@@ -54,6 +54,8 @@ SSLServer::SSLServer(PostazioneVoto *pv){
 
 SSLServer::~SSLServer(){
     //nel distruttore
+
+
     BIO_free_all(this->outbio);
     SSL_CTX_free(this->ctx);
     this->cleanup_openssl();
@@ -88,7 +90,7 @@ void SSLServer::ascoltaSeggio(){
     }
 
     if(!(this->stopServer)){
-        ssl = SSL_new(ctx);
+
         //se non è stata settata l'interruzione del server, lancia il thread per servire la richiesta
         thread t (&SSLServer::Servlet, this, client_sock);
         t.detach();
@@ -101,12 +103,12 @@ void SSLServer::ascoltaSeggio(){
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV:  interruzione del server in corso..." << endl;
 
-        int ab = close(client_sock);
-        if(ab ==0){
+        int ret = close(client_sock);
+        if(ret ==0){
             cout << "ServerPV: successo chiusura socket per il client" << endl;
         }
-        ab = close(this->listen_sock);
-        if(ab ==0){
+        ret = close(this->listen_sock);
+        if(ret ==0){
             cout << "ServerPV: successo chiusura socket del listener" << endl;
         }
         pvChiamante->mutex_stdout.unlock();
@@ -120,11 +122,12 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
     cout << "ServerPV:  Servlet: inizio servlet" << endl;
     pvChiamante->mutex_stdout.unlock();
 
+    SSL * ssl = SSL_new(ctx);
     //collega sessione ssl alla socket assegnata al client
-    SSL_set_fd(this->ssl, client_sock);
+    SSL_set_fd(ssl, client_sock);
 
 
-    if (SSL_accept(this->ssl) <= 0) {/* do SSL-protocol handshake */
+    if (SSL_accept(ssl) <= 0) {/* do SSL-protocol handshake */
         cout << "ServerPV: PV_Server: error in handshake" << endl;
         ERR_print_errors_fp(stderr);
 
@@ -133,8 +136,8 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: PV_Server: handshake ok!" << endl;
         pvChiamante->mutex_stdout.unlock();
-        this->ShowCerts();
-        this->verify_ClientCert();
+        this->ShowCerts(ssl);
+        this->verify_ClientCert(ssl);
 
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: PV_Server: ricevo l'identificativo del servizio richiesto..." << endl;
@@ -144,7 +147,7 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
         int servizio;
         char cod_servizio[128];
         memset(cod_servizio, '\0',sizeof(cod_servizio));
-        int bytes = SSL_read(this->ssl,cod_servizio,sizeof(cod_servizio));
+        int bytes = SSL_read(ssl,cod_servizio,sizeof(cod_servizio));
         if(bytes>0){
             cod_servizio[bytes]= 0;
             servizio = atoi(cod_servizio);
@@ -152,19 +155,19 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
             switch(servizio){
             case 0:
                 s = servizi::setAssociation;
-                this->service(s);
+                this->service(ssl, s);
                 break;
             case 1:
                 s = servizi::pullPVState;
-                this->service(s);
+                this->service(ssl, s);
                 break;
             case 2:
                 s = servizi::removeAssociation;
-                this->service(s);
+                this->service(ssl, s);
                 break;
             case 3:
                 s = servizi::freePV;
-                this->service(s);
+                this->service(ssl, s);
                 break;
             default:
                 cerr << "codice servizio non valido" << endl;
@@ -175,10 +178,10 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
         }
     }
     int sd;
-    sd = SSL_get_fd(this->ssl); /* get socket connection */
-    //cout << "ServerPV:  What's up?" << endl;
+    sd = SSL_get_fd(ssl); /* get socket connection */
+
     close(sd); /* close connection */
-    SSL_free(this->ssl);
+    SSL_free(ssl);
 
     pvChiamante->mutex_stdout.lock();
     cout << "ServerPV:  fine servlet" << endl;
@@ -188,7 +191,7 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
 
 }
 
-void SSLServer::service(servizi servizio) {
+void SSLServer::service(SSL * ssl, servizi servizio) {
     pvChiamante->mutex_stdout.lock();
     cout << "ServerPV: PV_Server: service started: " << servizio << endl;
     pvChiamante->mutex_stdout.unlock();
@@ -250,6 +253,8 @@ void SSLServer::service(servizi servizio) {
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: removeAssociation: return value to Seggio: " << success << endl;
         pvChiamante->mutex_stdout.unlock();
+
+        //inviamo al seggio un codice relativo all'esito dell'operazione
         const char * successValue = str.c_str();
         SSL_write(ssl,successValue,strlen(successValue));
 
@@ -562,7 +567,7 @@ void SSLServer::cleanup_openssl() {
     EVP_cleanup();
 }
 
-void SSLServer::ShowCerts() {
+void SSLServer::ShowCerts(SSL * ssl) {
 
     X509 *cert = NULL;
     char *line = NULL;
@@ -586,7 +591,7 @@ void SSLServer::ShowCerts() {
 
 }
 
-void SSLServer::verify_ClientCert() {
+void SSLServer::verify_ClientCert(SSL *ssl) {
 
     /* ---------------------------------------------------------- *
      * Declare X509 structure                                     *

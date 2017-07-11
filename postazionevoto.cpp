@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     symKeyAES = 0;
 
     //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 2;
+    idPostazioneVoto = 1;
 
 
     //connessione all'urna e richiesta di questi dati
@@ -28,6 +28,8 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
 
 
     this->setStatoPV(statiPV::attesa_attivazione);
+
+    this->runServerPV = true;
 }
 
 PostazioneVoto::~PostazioneVoto() {
@@ -152,17 +154,21 @@ bool PostazioneVoto::enablingPV() {
 }
 
 void PostazioneVoto::runServerListenSeggio(){
-    this->pv_server = new SSLServer(this);
+    pv_server = new SSLServer(this);
     this->mutex_stdout.lock();
     cout << "PV: avvio del pv_server per rispondere alle richieste del seggio" << endl;
     this->mutex_stdout.unlock();
-    while(1){
+    while(this->runServerPV){
+        //attesa di una richiesta dal seggio
         this->pv_server->ascoltaSeggio();
+        //prosegue rimettendosi in ascolto al ciclo successivo, se runServerPV ha valore booleano true
     }
+
     this->mutex_stdout.lock();
     cout << "PV: runServerListenSeggio: exit!" << endl;
     this->mutex_stdout.unlock();
 
+    delete this->pv_server;
     // il thread che eseguiva la funzione termina se la funzione arriva alla fine
     return;
 
@@ -170,4 +176,21 @@ void PostazioneVoto::runServerListenSeggio(){
 
 void PostazioneVoto::backToPostazioneAttiva(){
     //mainWindow->mostraInterfacciaPostazioneAttiva();
+}
+
+void PostazioneVoto::stopServerPV(){
+    this->runServerPV = false;
+    //predispongo il server per l'interruzione
+
+    this->pv_server->setStopServer(true);
+
+    this->mutex_stdout.lock();
+    cout << "Seggio: il server sta per essere fermato" << endl;
+    this->mutex_stdout.unlock();
+
+    //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto
+    const char * localhost = "127.0.0.1";
+
+    //implementare----->>>>
+    this->pv_client->stopLocalServer(localhost);
 }

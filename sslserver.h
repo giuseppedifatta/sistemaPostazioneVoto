@@ -54,10 +54,10 @@ private:
 
     void createServerContext();
     void configure_context(char* CertFile, char* KeyFile, char* ChainFile);
-    void ShowCerts();
-    void verify_ClientCert();
+    void ShowCerts(SSL *ssl);
+    void verify_ClientCert(SSL *ssl);
     void Servlet(int client_sock);
-    void service(servizi servizio);
+    void service(SSL *ssl, servizi servizio);
     int myssl_fwrite(const char * infile);
 
     void print_error_string(unsigned long err, const char* const label);

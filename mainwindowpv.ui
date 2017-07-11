@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>884</width>
+    <width>888</width>
     <height>605</height>
    </rect>
   </property>
@@ -136,6 +136,13 @@ background-color: white;
          <widget class="QLabel" name="postazioneAttiva_label">
           <property name="text">
            <string>Postazione attiva, disponibile per una associazione...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_2">
+          <property name="text">
+           <string>Quit App Temporary Button</string>
           </property>
          </widget>
         </item>

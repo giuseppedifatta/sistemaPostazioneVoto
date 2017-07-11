@@ -17,7 +17,7 @@ private:
     Ui::MainWindowPV *ui;
     PostazioneVoto * pv;
 
-    enum InterfacciePV{
+    enum InterfaccePV{
         attivazione,
         disponibile,
         abilitazione,
@@ -37,6 +37,7 @@ private slots:
     void on_attiva_button_clicked();
 
 
+    void on_pushButton_2_clicked();
 };
 
 #endif // MAINWINDOWPV_H

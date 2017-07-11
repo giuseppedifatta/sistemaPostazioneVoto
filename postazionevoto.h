@@ -48,12 +48,17 @@ public:
     bool enablingPV();
     int runServicesToSeggio();
 
+
+    void stopServerPV();
+
     mutex mutex_stdout;
-    //dati membro
+
 
      void setHTAssociato(unsigned int tokenCod);
      void backToPostazioneAttiva();
 private:
+
+     //dati membro
     MainWindowPV *mainWindow;
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
     unsigned int sessionKey_PV_Urna; //chiave privata presente sulla smart card
@@ -72,8 +77,11 @@ private:
 
     SSLClient *pv_client;
     SSLServer *pv_server;
+
     thread server_thread;
     void runServerListenSeggio();
+
+    bool runServerPV;
 protected:
 
     //monitoraggio postazione, servizi per il seggio

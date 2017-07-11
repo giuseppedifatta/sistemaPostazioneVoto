@@ -171,7 +171,7 @@ void SSLClient::init_openssl_library() {
     /*  some #defines and internal gyrations. Explicitly call it    */
     /*  *IF* you need something from openssl.cfg, such as a         */
     /*  dynamically configured ENGINE.                              */
-    OPENSSL_config(NULL);
+    //OPENSSL_config(NULL);
 
 }
 
@@ -383,6 +383,27 @@ void SSLClient::cleanup_openssl(){
     EVP_cleanup();
 }
 
+void SSLClient::stopLocalServer(const char* localhost/*hostname*/){
+    //questa funzione contatta il server locale, ma non deve fare alcuna operazione se non quella
+    //di sbloccare il server locale dallo stato di attesa di una nuova connessione, così da portare
+    //al ricontrollo della condizione del while che se falsa, porta
+    //all'interruzione del thread chiamante
+    const char * port = SERVER_PORT;
 
+    //la creazione della socket sblocca il server locale dall'accept della connessione tcp
+
+    create_socket(localhost/*hostname*/, port);
+
+    // avendo impostato a true la variabile bool stopServer, non verrà inizializzata la connessione ssl
+    // si passa direttamente alla chiusura delle socket
+    //seggioChiamante->mutex_stdout.lock();
+    cout << "ClientPV: niente da fare... chiudo la socket per il server" << endl;
+    //seggioChiamante->mutex_stdout.unlock();
+    if(close(this->server_sock) != 0)
+    {
+            cerr << "ClientSeggio: errore chiusura socket server" << endl;
+    }
+
+}
 
 
