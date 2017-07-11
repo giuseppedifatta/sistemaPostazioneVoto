@@ -128,7 +128,7 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     ss << idPV;
     string str= ss.str();
     const char * charArray_idPV = str.c_str();
-    cout << "ClientPV:idPV to update: " << charArray_idPV << endl;
+    cout << "ClientPV: idPV to update: " << charArray_idPV << endl;
 
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
@@ -136,7 +136,7 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     stringstream ss1;
     ss1 << statoPV;
     const char *  charArray_statoPV = ss1.str().c_str();
-    cout << "ClientPV:statoPV: " << charArray_statoPV << endl;
+    cout << "ClientPV: statoPV to update: " << charArray_statoPV << endl;
     //cout << strlen(charArray_statoPV) << endl;
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
@@ -144,30 +144,28 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
     BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
                hostnameSeggio);
 
-//    SSL_shutdown(this->ssl);
-//    close(this->server_sock);
-//    //this->ssl = SSL_new(this->ctx);
-
-
-
+    int ret = SSL_shutdown(this->ssl);
+    if (ret == 0){
+        SSL_shutdown(this->ssl);
+    }
 
     SSL_free(this->ssl);
+
+    if(close(this->server_sock) != 0)
+        cerr << "errore chiusura della socket creata per il server" << endl;
 
 }
 
 void SSLClient::init_openssl_library() {
-    /* https://www.openssl.org/docs/ssl/SSL_library_init.html */
-    SSL_library_init();
-    /* Cannot fail (always returns success) ??? */
 
-    /* https://www.openssl.org/docs/crypto/ERR_load_crypto_strings.html */
+    SSL_library_init();
+
     SSL_load_error_strings();
-    /* Cannot fail ??? */
 
     ERR_load_BIO_strings();
-    /* SSL_load_error_strings loads both libssl and libcrypto strings */
+
     ERR_load_crypto_strings();
-    /* Cannot fail ??? */
+
 
     /* OpenSSL_config may or may not be called internally, based on */
     /*  some #defines and internal gyrations. Explicitly call it    */

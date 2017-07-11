@@ -50,7 +50,7 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //iniziare una sessione ssl con la postazione di voto
 
 
-    const char * postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+    const char * postazioneSeggio = "192.168.192.128"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
     cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
     cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;

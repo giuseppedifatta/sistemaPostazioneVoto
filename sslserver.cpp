@@ -703,7 +703,7 @@ void SSLServer::verify_ClientCert() {
     //BIO_free_all(certbio);
 
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  Fine --Verify Client Cert --" << endl;
+    cout << "ServerPV: Fine --Verify Client Cert --" << endl;
     pvChiamante->mutex_stdout.unlock();
 }
 
