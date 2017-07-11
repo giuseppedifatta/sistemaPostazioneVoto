@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     symKeyAES = 0;
 
     //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 1;
+    idPostazioneVoto = 2;
 
 
     //connessione all'urna e richiesta di questi dati

@@ -597,7 +597,7 @@ void SSLServer::verify_ClientCert() {
     X509_STORE *store = NULL;
     X509_STORE_CTX *vrfy_ctx = NULL;
     //BIO *certbio = NULL;
-    X509_NAME *certname = NULL;
+    //X509_NAME *certname = NULL;
 
     //certbio = BIO_new(BIO_s_file());
 
@@ -620,17 +620,17 @@ void SSLServer::verify_ClientCert() {
     /* ---------------------------------------------------------- *
      * extract various certificate information                    *
      * -----------------------------------------------------------*/
-    certname = X509_NAME_new();
-    certname = X509_get_subject_name(cert);
+    //certname = X509_NAME_new();
+    //certname = X509_get_subject_name(cert);
 
     /* ---------------------------------------------------------- *
      * display the cert subject here                              *
      * -----------------------------------------------------------*/
-    pvChiamante->mutex_stdout.lock();
-    BIO_printf(this->outbio, "Server: Displaying the certificate subject data:\n");
-    X509_NAME_print_ex(this->outbio, certname, 0, 0);
-    BIO_printf(this->outbio, "\n");
-    pvChiamante->mutex_stdout.unlock();
+//    pvChiamante->mutex_stdout.lock();
+//    BIO_printf(this->outbio, "Server: Displaying the certificate subject data:\n");
+//    X509_NAME_print_ex(this->outbio, certname, 0, 0);
+//    BIO_printf(this->outbio, "\n");
+//    pvChiamante->mutex_stdout.unlock();
     /* ---------------------------------------------------------- *
      * Initialize the global certificate validation store object. *
      * ---------------------------------------------------------- */

@@ -293,7 +293,7 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
     X509_NAME *certsubject = NULL;
     X509_STORE *store = NULL;
     X509_STORE_CTX *vrfy_ctx = NULL;
-    X509_NAME *certname = NULL;
+    //X509_NAME *certname = NULL;
     int ret;
 
     BIO *certbio = NULL;
@@ -313,14 +313,14 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
 
     // extract various certificate information
 
-    certname = X509_NAME_new();
-    certname = X509_get_subject_name(peer_cert);
+    //certname = X509_NAME_new();
+    //certname = X509_get_subject_name(peer_cert);
 
     // display the cert subject here
 
-    BIO_printf(this->outbio, "ClientPV: Displaying the certificate subject data:\n");
-    X509_NAME_print_ex(this->outbio, certname, 0, 0);
-    BIO_printf(this->outbio, "ClientPV: \n");
+//    BIO_printf(this->outbio, "ClientPV: Displaying the certificate subject data:\n");
+//    X509_NAME_print_ex(this->outbio, certname, 0, 0);
+//    BIO_printf(this->outbio, " \n");
 
     //Initialize the global certificate validation store object.
     if (!(store = X509_STORE_new()))
