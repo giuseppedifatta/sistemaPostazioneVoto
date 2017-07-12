@@ -54,7 +54,7 @@ public:
     mutex mutex_stdout;
 
 
-     void setHTAssociato(unsigned int tokenCod);
+     int setHTAssociato(unsigned int tokenCod);
      void backToPostazioneAttiva();
 private:
 

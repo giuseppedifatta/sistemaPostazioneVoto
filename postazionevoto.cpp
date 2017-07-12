@@ -99,7 +99,7 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
     return true;
 }
 
-void PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
+int PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
     if(this->HTAssociato == 0){
         this->HTAssociato = tokenCod;
 
@@ -108,10 +108,12 @@ void PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
         cout << "PV: aggiorno lo stato della postazione di voto..." << endl;
         this->setStatoPV(this->statiPV::attesa_abilitazione);
         cout << "PV: stato postazione di voto aggiornato." << endl;
+        return 0;
     }
     else{
         cout << "PV: Resetto l'ht della postazione" << endl;
         this->HTAssociato = tokenCod;
+        return 1;
     }
 }
 
@@ -185,7 +187,7 @@ void PostazioneVoto::stopServerPV(){
     this->pv_server->setStopServer(true);
 
     this->mutex_stdout.lock();
-    cout << "Seggio: il server sta per essere fermato" << endl;
+    cout << "PV: il ServerPV sta per essere fermato" << endl;
     this->mutex_stdout.unlock();
 
     //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto

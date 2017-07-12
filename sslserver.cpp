@@ -206,7 +206,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
 
     case servizi::setAssociation:{
 
-
+        int success = -1;
         unsigned int idHT;
 
         bytes = SSL_read(ssl, buf, sizeof(buf));
@@ -216,12 +216,27 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
             pvChiamante->mutex_stdout.lock();
             cout << "ServerPV: PV_Server: ht da settare: " << idHT << endl;
             pvChiamante->mutex_stdout.unlock();
-            pvChiamante->setHTAssociato(idHT);
 
+
+            if(pvChiamante->setHTAssociato(idHT) == 0){ //restituisce 0 se l'HT è stato settato, 1 se è stato resettato
+                success = 0;
+            }
         }
         else{
             cerr << "PV_Server: error to read HT cod" << endl;
         }
+
+        //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
+        stringstream ss;
+        ss << success;
+        string str = ss.str();
+        pvChiamante->mutex_stdout.lock();
+        cout << "ServerPV: setAssociation: return value to seggio: " << success << endl;
+        pvChiamante->mutex_stdout.unlock();
+
+        //inviamo al seggio un codice relativo all'esito dell'operazione
+        const char * successValue = str.c_str();
+        SSL_write(ssl,successValue,strlen(successValue));
 
         break;
     }
@@ -241,9 +256,6 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
 
             //mostrare sulla postazione di voto la schermata di postazione libera
             pvChiamante->backToPostazioneAttiva();
-
-
-
         }
 
         //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
@@ -251,7 +263,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         ss << success;
         string str = ss.str();
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV: removeAssociation: return value to Seggio: " << success << endl;
+        cout << "ServerPV: removeAssociation: return value to seggio: " << success << endl;
         pvChiamante->mutex_stdout.unlock();
 
         //inviamo al seggio un codice relativo all'esito dell'operazione
@@ -326,9 +338,9 @@ void SSLServer::createServerContext() {
     //https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_options.html
     const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
     long old_opts = SSL_CTX_set_options(this->ctx, flags);
-//    pvChiamante->mutex_stdout.lock();
-//    cout << "ServerPV:  bitmask options: " << old_opts << endl;
-//    pvChiamante->mutex_stdout.unlock();
+    //    pvChiamante->mutex_stdout.lock();
+    //    cout << "ServerPV:  bitmask options: " << old_opts << endl;
+    //    pvChiamante->mutex_stdout.unlock();
     //return ctx;
 }
 
@@ -631,11 +643,11 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
     /* ---------------------------------------------------------- *
      * display the cert subject here                              *
      * -----------------------------------------------------------*/
-//    pvChiamante->mutex_stdout.lock();
-//    BIO_printf(this->outbio, "Server: Displaying the certificate subject data:\n");
-//    X509_NAME_print_ex(this->outbio, certname, 0, 0);
-//    BIO_printf(this->outbio, "\n");
-//    pvChiamante->mutex_stdout.unlock();
+    //    pvChiamante->mutex_stdout.lock();
+    //    BIO_printf(this->outbio, "Server: Displaying the certificate subject data:\n");
+    //    X509_NAME_print_ex(this->outbio, certname, 0, 0);
+    //    BIO_printf(this->outbio, "\n");
+    //    pvChiamante->mutex_stdout.unlock();
     /* ---------------------------------------------------------- *
      * Initialize the global certificate validation store object. *
      * ---------------------------------------------------------- */
