@@ -240,8 +240,18 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
 
         break;
     }
-    case servizi::pullPVState:
+    case servizi::pullPVState:{
+
+
+        stringstream ss1;
+        ss1 << pvChiamante->getStatoPV();
+        const char *  charArray_statoPV = ss1.str().c_str();
+        cout << "ServerPV: statoPV richiesto dal seggio: " << charArray_statoPV << endl;
+        //cout << strlen(charArray_statoPV) << endl;
+        SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
+
         break;
+    }
     case servizi::removeAssociation:{
         int success = -1;
         if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione) || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
