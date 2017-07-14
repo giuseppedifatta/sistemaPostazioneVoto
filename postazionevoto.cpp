@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     symKeyAES = 0;
 
     //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 1;
+    idPostazioneVoto = 2;
 
 
     //connessione all'urna e richiesta di questi dati
@@ -52,7 +52,7 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //iniziare una sessione ssl con la postazione di voto
 
 
-    const char * postazioneSeggio = "192.168.192.128"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+    const char * postazioneSeggio = "192.168.192.130"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
     cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
     cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;

@@ -43,7 +43,7 @@ SSLServer::SSLServer(PostazioneVoto *pv){
     configure_context(certFile, keyFile, chainFile);
 
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  Cert and key configured" << endl;
+    cout << "ServerPV: Cert and key configured" << endl;
     pvChiamante->mutex_stdout.unlock();
 
 
@@ -83,8 +83,8 @@ void SSLServer::ascoltaSeggio(){
     }
     else{
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV:  Un client ha iniziato la connessione su una socket con fd:" << client_sock << endl;
-        cout << "ServerPV:  Client's Port assegnata: "<< ntohs(client_addr.sin_port)<< endl;
+        cout << "ServerPV: Un client ha iniziato la connessione su una socket con fd:" << client_sock << endl;
+        cout << "ServerPV: Client's Port assegnata: "<< ntohs(client_addr.sin_port)<< endl;
         pvChiamante->mutex_stdout.unlock();
 
     }
@@ -95,13 +95,13 @@ void SSLServer::ascoltaSeggio(){
         thread t (&SSLServer::Servlet, this, client_sock);
         t.detach();
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV:  start a thread..." << endl;
+        cout << "ServerPV: start a thread..." << endl;
         pvChiamante->mutex_stdout.unlock();
     }
     else{
         //termina l'ascolto
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV:  interruzione del server in corso..." << endl;
+        cout << "ServerPV: interruzione del server in corso..." << endl;
 
         int ret = close(client_sock);
         if(ret ==0){
@@ -119,7 +119,7 @@ void SSLServer::ascoltaSeggio(){
 
 void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable */
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  Servlet: inizio servlet" << endl;
+    cout << "ServerPV: Servlet: inizio servlet" << endl;
     pvChiamante->mutex_stdout.unlock();
 
     SSL * ssl = SSL_new(ctx);
@@ -184,7 +184,7 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
     SSL_free(ssl);
 
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  fine servlet" << endl;
+    cout << "ServerPV: fine servlet" << endl;
     pvChiamante->mutex_stdout.unlock();
     //close(client_sock);
 
@@ -305,7 +305,7 @@ int SSLServer::openListener(int s_port) {
     sa_serv.sin_addr.s_addr = INADDR_ANY;
     sa_serv.sin_port = htons(s_port); /* Server Port number */
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  Server's Port: "<< ntohs(sa_serv.sin_port)<<endl;
+    cout << "ServerPV: Server's Port: "<< ntohs(sa_serv.sin_port)<<endl;
     pvChiamante->mutex_stdout.unlock();
     r = bind(this->listen_sock, (struct sockaddr*) &sa_serv, sizeof(sa_serv));
     if (r < 0) {
@@ -339,7 +339,7 @@ void SSLServer::createServerContext() {
     const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
     long old_opts = SSL_CTX_set_options(this->ctx, flags);
     //    pvChiamante->mutex_stdout.lock();
-    //    cout << "ServerPV:  bitmask options: " << old_opts << endl;
+    //    cout << "ServerPV: bitmask options: " << old_opts << endl;
     //    pvChiamante->mutex_stdout.unlock();
     //return ctx;
 }
@@ -419,7 +419,7 @@ void SSLServer::print_cn_name(const char* label, X509_NAME* const name) {
             break; /* failed */
 
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV:    " << label << ": " << utf8 << endl;
+        cout << "ServerPV: " << label << ": " << utf8 << endl;
         pvChiamante->mutex_stdout.unlock();
         success = 1;
 
@@ -430,7 +430,7 @@ void SSLServer::print_cn_name(const char* label, X509_NAME* const name) {
     pvChiamante->mutex_stdout.lock();
     if (!success){
 
-        cout << "ServerPV:    " << label << ": <not available>" << endl;
+        cout << "ServerPV: " << label << ": <not available>" << endl;
     }
     pvChiamante->mutex_stdout.unlock();
 }
@@ -478,7 +478,7 @@ void SSLServer::print_san_name(const char* label, X509* const cert) {
                 // indicates the client is under attack.
                 if (utf8 && len1 && len2 && (len1 == len2)) {
                     pvChiamante->mutex_stdout.lock();
-                    cout << "ServerPV:    " << label << ": " << utf8 << endl;
+                    cout << "ServerPV: " << label << ": " << utf8 << endl;
                     pvChiamante->mutex_stdout.unlock();
                     success = 1;
                 }
@@ -501,14 +501,14 @@ void SSLServer::print_san_name(const char* label, X509* const cert) {
 
     if (!success){
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV:    " << label << ": <not available>\n" << endl;
+        cout << "ServerPV: " << label << ": <not available>\n" << endl;
         pvChiamante->mutex_stdout.unlock();
     }
 }
 
 int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
 
-    /*cout << "ServerPV:  preverify value: " << preverify <<endl;*/
+    /*cout << "ServerPV: preverify value: " << preverify <<endl;*/
     int depth = X509_STORE_CTX_get_error_depth(x509_ctx);
     int err = X509_STORE_CTX_get_error(x509_ctx);
 
@@ -517,7 +517,7 @@ int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
     X509_NAME* sname = cert ? X509_get_subject_name(cert) : NULL;
 
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV:  verify_callback (depth=" << depth << ")(preverify=" << preverify
+    cout << "ServerPV: verify_callback (depth=" << depth << ")(preverify=" << preverify
          << ")" << endl;
     pvChiamante->mutex_stdout.unlock();
     /* Issuer is the authority we trust that warrants nothing useful */
@@ -536,30 +536,30 @@ int SSLServer::verify_callback(int preverify, X509_STORE_CTX* x509_ctx) {
     if (preverify == 0) {
         if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY){
 
-            cout << "ServerPV:    Error = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY\n";
+            cout << "ServerPV: Error = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY\n";
         }
         else if (err == X509_V_ERR_CERT_UNTRUSTED){
 
-            cout << "ServerPV:    Error = X509_V_ERR_CERT_UNTRUSTED\n";
+            cout << "ServerPV: Error = X509_V_ERR_CERT_UNTRUSTED\n";
         }
         else if (err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN){
 
-            cout << "ServerPV:    Error = X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN\n";}
+            cout << "ServerPV: Error = X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN\n";}
         else if (err == X509_V_ERR_CERT_NOT_YET_VALID) {
 
-            cout << "ServerPV:    Error = X509_V_ERR_CERT_NOT_YET_VALID\n";
+            cout << "ServerPV: Error = X509_V_ERR_CERT_NOT_YET_VALID\n";
         }
         else if (err == X509_V_ERR_CERT_HAS_EXPIRED){
 
-            cout << "ServerPV:    Error = X509_V_ERR_CERT_HAS_EXPIRED\n";
+            cout << "ServerPV: Error = X509_V_ERR_CERT_HAS_EXPIRED\n";
         }
         else if (err == X509_V_OK){
 
-            cout << "ServerPV:    Error = X509_V_OK\n";
+            cout << "ServerPV: Error = X509_V_OK\n";
         }
         else{
 
-            cout << "ServerPV:    Error = " << err << "\n";
+            cout << "ServerPV: Error = " << err << "\n";
         }
     }
     pvChiamante->mutex_stdout.unlock();
@@ -738,15 +738,15 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
         char * buffer = new char[length];
 
-        cout << "ServerPV:  Reading " << length << " characters... ";
+        cout << "ServerPV: Reading " << length << " characters... ";
         // read data as a block:
         is.read(buffer, length);
 
         if (is){
-            cout << "ServerPV:  all characters read successfully." << endl;
+            cout << "ServerPV: all characters read successfully." << endl;
         }
         else{
-            cout << "ServerPV:  error: only " << is.gcount() << " could be read";
+            cout << "ServerPV: error: only " << is.gcount() << " could be read";
         }
         is.close();
 
@@ -756,7 +756,7 @@ int SSLServer::myssl_fwrite(const char * infile) {
         strs << length;
         string temp_str = strs.str();
         const char *info = temp_str.c_str();
-        cout << "ServerPV:  bytes to send:" << info << endl;
+        cout << "ServerPV: bytes to send:" << info << endl;
         SSL_write(ssl, info, strlen(info));
         SSL_write(ssl, buffer, length);
         delete[] buffer;
@@ -764,7 +764,7 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
     }
     else{
-        cout << "ServerPV:  file unreadable" << endl;
+        cout << "ServerPV: file unreadable" << endl;
     }
     return 0;
 }
