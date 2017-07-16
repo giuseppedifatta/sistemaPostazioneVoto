@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     symKeyAES = 0;
 
     //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 2;
+    idPostazioneVoto = 1;
 
 
     //connessione all'urna e richiesta di questi dati
@@ -27,7 +27,7 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     this->pv_client = new SSLClient();
 
 
-    this->setStatoPV(statiPV::attesa_attivazione);
+
 
     this->runServerPV = true;
 }
@@ -48,14 +48,14 @@ bool PostazioneVoto::PostazioneVoto::offlinePV() {
 void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     this->statoPV = nuovoStato;
 
+    this->mainWindow->updateInterfaccia();
+
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
-
-
     const char * postazioneSeggio = "192.168.192.130"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
-    cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
+    //cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
     this->pv_client->connectTo(postazioneSeggio);
-    cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
+    //cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
 
@@ -99,21 +99,26 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
     return true;
 }
 
-int PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
-    if(this->HTAssociato == 0){
+bool PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
+    if(this->HTAssociato == 0 && tokenCod!=0){ //nessun token associato
         this->HTAssociato = tokenCod;
 
         //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
-        //mainWindow->mostraInterfacciaAbilitazioneWithOTP();
+
         cout << "PV: aggiorno lo stato della postazione di voto..." << endl;
-        this->setStatoPV(this->statiPV::attesa_abilitazione);
+        //this->setStatoPV(this->statiPV::attesa_abilitazione);
         cout << "PV: stato postazione di voto aggiornato." << endl;
-        return 0;
+
+        //mainWindow->mostraInterfacciaAbilitazioneWithOTP();
+
+        return true;
     }
     else{
         cout << "PV: Resetto l'ht della postazione" << endl;
         this->HTAssociato = tokenCod;
-        return 1;
+
+        //this->setStatoPV(this->statiPV::libera);
+        return false;
     }
 }
 
@@ -177,7 +182,7 @@ void PostazioneVoto::runServerListenSeggio(){
 }
 
 void PostazioneVoto::backToPostazioneAttiva(){
-    //mainWindow->mostraInterfacciaPostazioneAttiva();
+    mainWindow->mostraInterfacciaPostazioneAttiva();
 }
 
 void PostazioneVoto::stopServerPV(){

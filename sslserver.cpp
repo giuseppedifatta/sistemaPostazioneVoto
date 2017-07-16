@@ -218,8 +218,9 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
             pvChiamante->mutex_stdout.unlock();
 
 
-            if(pvChiamante->setHTAssociato(idHT) == 0){ //restituisce 0 se l'HT è stato settato, 1 se è stato resettato
+            if(pvChiamante->setHTAssociato(idHT)){ //restituisce true se l'esito dell'operazione è positivo
                 success = 0;
+                pvChiamante->setStatoPV(pvChiamante->statiPV::attesa_abilitazione);
             }
         }
         else{
@@ -256,16 +257,17 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         int success = -1;
         if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione) || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
             //TODO imposta stato postazione a libera
-            pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
-            pvChiamante->setHTAssociato(0);
-            //settiamo il valore 0 in caso di operazione riuscita
-            success = 0;
-            pvChiamante->mutex_stdout.lock();
-            cout << "ServerPV: PV_Server: associazione rimossa!! "<< endl;
-            pvChiamante->mutex_stdout.unlock();
 
-            //mostrare sulla postazione di voto la schermata di postazione libera
-            pvChiamante->backToPostazioneAttiva();
+            if(pvChiamante->setHTAssociato(0) == false){
+               pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
+
+               //settiamo il valore 0 in caso di operazione riuscita
+               success = 0;
+               pvChiamante->mutex_stdout.lock();
+               cout << "ServerPV: associazione rimossa!! "<< endl;
+               pvChiamante->mutex_stdout.unlock();
+            }
+
         }
 
         //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
@@ -347,7 +349,7 @@ void SSLServer::createServerContext() {
 
     //https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_options.html
     const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-    long old_opts = SSL_CTX_set_options(this->ctx, flags);
+    /*long old_opts = */SSL_CTX_set_options(this->ctx, flags);
     //    pvChiamante->mutex_stdout.lock();
     //    cout << "ServerPV: bitmask options: " << old_opts << endl;
     //    pvChiamante->mutex_stdout.unlock();

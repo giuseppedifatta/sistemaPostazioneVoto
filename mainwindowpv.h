@@ -22,13 +22,15 @@ private:
         disponibile,
         abilitazione,
         compilazioneSchede,
-        votoInviato
+        votoInviato,
+        errore_offline
     };
 
 public:
     explicit MainWindowPV(QWidget *parent = 0);
     ~MainWindowPV();
 
+    void updateInterfaccia();
     void mostraInterfacciaAbilitazioneWithOTP();
     void mostraInterfacciaPostazioneAttiva();
 private slots:
