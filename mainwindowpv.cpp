@@ -72,12 +72,15 @@ void MainWindowPV::updateInterfaccia(){
     switch(statoPV){
     case pv->statiPV::attesa_attivazione:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::attivazione);
+        cout << "schermata attivazione impostata" << endl;
         break;
     case pv->statiPV::libera:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::disponibile);
+        cout << "schermata disponibile impostata" << endl;
         break;
     case pv->statiPV::attesa_abilitazione:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::abilitazione);
+        cout << "schermata abilitazione otp impostata" << endl;
         break;
     case pv->statiPV::votazione_in_corso:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
@@ -90,5 +93,5 @@ void MainWindowPV::updateInterfaccia(){
         ui->stackedWidget->setCurrentIndex(InterfaccePV::errore_offline);
         break;
     }
-    cout << "interfaccia aggiornata" << endl;
+    cout << "View: interfaccia aggiornata" << endl;
 }

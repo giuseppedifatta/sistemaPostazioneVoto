@@ -48,7 +48,7 @@ bool PostazioneVoto::PostazioneVoto::offlinePV() {
 void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     this->statoPV = nuovoStato;
 
-    this->mainWindow->updateInterfaccia();
+
 
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
@@ -58,7 +58,8 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
-
+    cout << "PV: richiedo alla view l'aggiornamento dell'interfaccia"  << endl;
+    mainWindow->updateInterfaccia();
 }
 
 unsigned int PostazioneVoto::getStatoPV(){
@@ -105,7 +106,7 @@ bool PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
 
         //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
 
-        cout << "PV: aggiorno lo stato della postazione di voto..." << endl;
+        //cout << "PV: aggiorno lo stato della postazione di voto..." << endl;
         //this->setStatoPV(this->statiPV::attesa_abilitazione);
         cout << "PV: stato postazione di voto aggiornato." << endl;
 

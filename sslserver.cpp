@@ -90,13 +90,33 @@ void SSLServer::ascoltaSeggio(){
     }
 
     if(!(this->stopServer)){
-
+        //sezione 1
         //se non è stata settata l'interruzione del server, lancia il thread per servire la richiesta
+        //commentare la sezione 2 per usare questa sezione
         thread t (&SSLServer::Servlet, this, client_sock);
         t.detach();
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: start a thread..." << endl;
         pvChiamante->mutex_stdout.unlock();
+
+
+        //-----sezione sperimentale-----
+        //sezione 2
+        //proviamo a non lanciare il thread e fare le operazioni sequenzialmente nel thread server
+        //principale, senza generare un thread figlio che svolga il compito al suo posto
+        //commentare la sezione 1 per usare questa sezione
+        //        pvChiamante->mutex_stdout.lock();
+        //        cout << "ServerPV: eseguo il servizio richiesto nel thread server principale" << endl;
+        //        pvChiamante->mutex_stdout.unlock();
+
+        //        Servlet(client_sock);
+
+
+
+
+
+
+
     }
     else{
         //termina l'ascolto
@@ -128,19 +148,19 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
 
 
     if (SSL_accept(ssl) <= 0) {/* do SSL-protocol handshake */
-        cout << "ServerPV: PV_Server: error in handshake" << endl;
+        cout << "ServerPV: error in handshake" << endl;
         ERR_print_errors_fp(stderr);
 
     }
     else {
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV: PV_Server: handshake ok!" << endl;
+        cout << "ServerPV: handshake ok!" << endl;
         pvChiamante->mutex_stdout.unlock();
         this->ShowCerts(ssl);
         this->verify_ClientCert(ssl);
 
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV: PV_Server: ricevo l'identificativo del servizio richiesto..." << endl;
+        cout << "ServerPV: ricevo l'identificativo del servizio richiesto..." << endl;
         pvChiamante->mutex_stdout.unlock();
 
         //ricezione codice del servizio richiesto
@@ -174,7 +194,7 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
             }
         }
         else{
-            cerr << "PV_Server: errore lettura del codice di servizio" <<endl;
+            cerr << "ServerPV: errore lettura del codice di servizio" <<endl;
         }
     }
     int sd;
@@ -193,7 +213,7 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
 
 void SSLServer::service(SSL * ssl, servizi servizio) {
     pvChiamante->mutex_stdout.lock();
-    cout << "ServerPV: PV_Server: service started: " << servizio << endl;
+    cout << "ServerPV: service started: " << servizio << endl;
     pvChiamante->mutex_stdout.unlock();
     char buf[128];
 
@@ -214,7 +234,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
             buf[bytes] = 0;
             idHT = atoi(buf);
             pvChiamante->mutex_stdout.lock();
-            cout << "ServerPV: PV_Server: ht da settare: " << idHT << endl;
+            cout << "ServerPV: ht da settare: " << idHT << endl;
             pvChiamante->mutex_stdout.unlock();
 
 
@@ -224,7 +244,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
             }
         }
         else{
-            cerr << "PV_Server: error to read HT cod" << endl;
+            cerr << "ServerPV: error to read HT cod" << endl;
         }
 
         //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
@@ -243,7 +263,6 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
     }
     case servizi::pullPVState:{
 
-
         stringstream ss1;
         ss1 << pvChiamante->getStatoPV();
         const char *  charArray_statoPV = ss1.str().c_str();
@@ -259,13 +278,13 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
             //TODO imposta stato postazione a libera
 
             if(pvChiamante->setHTAssociato(0) == false){
-               pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
+                pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
 
-               //settiamo il valore 0 in caso di operazione riuscita
-               success = 0;
-               pvChiamante->mutex_stdout.lock();
-               cout << "ServerPV: associazione rimossa!! "<< endl;
-               pvChiamante->mutex_stdout.unlock();
+                //settiamo il valore 0 in caso di operazione riuscita
+                success = 0;
+                pvChiamante->mutex_stdout.lock();
+                cout << "ServerPV: associazione rimossa!! "<< endl;
+                pvChiamante->mutex_stdout.unlock();
             }
 
         }
@@ -637,12 +656,12 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
     pvChiamante->mutex_stdout.lock();
     if (cert == NULL){
 
-        BIO_printf(this->outbio, "Server: Server: Error: Could not get a certificate \n"
+        BIO_printf(this->outbio, "ServerPV: Error: Could not get a certificate \n"
                    /*,hostname*/);
     }
     else{
 
-        BIO_printf(this->outbio, "Server: Retrieved the client's certificate \n"
+        BIO_printf(this->outbio, "ServerPV: Retrieved the client's certificate \n"
                    /*,hostname*/);
     }
     pvChiamante->mutex_stdout.unlock();
@@ -656,7 +675,7 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
      * display the cert subject here                              *
      * -----------------------------------------------------------*/
     //    pvChiamante->mutex_stdout.lock();
-    //    BIO_printf(this->outbio, "Server: Displaying the certificate subject data:\n");
+    //    BIO_printf(this->outbio, "ServerPV: Displaying the certificate subject data:\n");
     //    X509_NAME_print_ex(this->outbio, certname, 0, 0);
     //    BIO_printf(this->outbio, "\n");
     //    pvChiamante->mutex_stdout.unlock();
@@ -665,7 +684,7 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
      * ---------------------------------------------------------- */
     if (!(store = X509_STORE_new())){
         pvChiamante->mutex_stdout.lock();
-        BIO_printf(this->outbio, "Server: Error creating X509_STORE_CTX object\n");
+        BIO_printf(this->outbio, "ServerPV: Error creating X509_STORE_CTX object\n");
         pvChiamante->mutex_stdout.unlock();
     }
 
@@ -681,14 +700,14 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
     /*
          ret = BIO_read_filename(certbio, certFile);
          if (!(cert = PEM_read_bio_X509(certbio, NULL, 0, NULL)))
-         BIO_printf(this->outbio, "Server: Error loading cert into memory\n");
+         BIO_printf(this->outbio, "ServerPV: Error loading cert into memory\n");
          */
     char chainFile[] =
             "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
 
     ret = X509_STORE_load_locations(store, chainFile, NULL);
     if (ret != 1){
-        BIO_printf(this->outbio, "Server: Error loading CA cert or chain file\n");
+        BIO_printf(this->outbio, "ServerPV: Error loading CA cert or chain file\n");
     }
     /* ---------------------------------------------------------- *
      * Initialize the ctx structure for a verification operation: *
@@ -703,10 +722,10 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
      * for trouble with the ctx object (i.e. missing certificate) *
      * ---------------------------------------------------------- */
     ret = X509_verify_cert(vrfy_ctx);
-    BIO_printf(this->outbio, "Server: Verification return code: %d\n", ret);
+    BIO_printf(this->outbio, "ServerPV: Verification return code: %d\n", ret);
 
     if (ret == 0 || ret == 1){
-        BIO_printf(this->outbio, "Server: Verification result text: %s\n",
+        BIO_printf(this->outbio, "ServerPV: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
     }
     /* ---------------------------------------------------------- *
@@ -718,7 +737,7 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
         error_cert = X509_STORE_CTX_get_current_cert(vrfy_ctx);
         certsubject = X509_NAME_new();
         certsubject = X509_get_subject_name(error_cert);
-        BIO_printf(this->outbio, "Server: Verification failed cert:\n");
+        BIO_printf(this->outbio, "ServerPV: Verification failed cert:\n");
         X509_NAME_print_ex(this->outbio, certsubject, 0, XN_FLAG_MULTILINE);
         BIO_printf(this->outbio, "\n");
     }
