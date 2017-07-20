@@ -10,8 +10,16 @@
 
 using namespace std;
 
-PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
-    mainWindow = m;
+void PostazioneVoto::validatePassKey(QString pass)
+{
+    if(pass == "pv1"){
+        setStatoPV(statiPV::libera);
+    }
+}
+
+PostazioneVoto::PostazioneVoto(QObject *parent) :
+    QThread(parent){
+    //mainWindow = m;
     HTAssociato = 0;
     ivCBC = 0;
     symKeyAES = 0;
@@ -23,18 +31,18 @@ PostazioneVoto::PostazioneVoto(MainWindowPV *m) {
     //connessione all'urna e richiesta di questi dati
     pSchedeVoto = NULL;
     publicKeyRP = 0;
+
     //init client
     this->pv_client = new SSLClient();
 
-
-
-
+    //abilito l'avvio del server in ascolto
+    mutex_run_server.lock();
     this->runServerPV = true;
+    mutex_run_server.unlock();
 }
 
 PostazioneVoto::~PostazioneVoto() {
     // TODO Auto-generated destructor stub
-    server_thread.join();
     delete this->pv_client;
 }
 
@@ -46,8 +54,14 @@ bool PostazioneVoto::PostazioneVoto::offlinePV() {
 }
 
 void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
+
+    //dovrei usare un mutex
     this->statoPV = nuovoStato;
 
+    //emetto il segnale che comunica il cambiamento di stato della postazione di voto
+    emit stateChange(nuovoStato);
+
+    cout << "PV: segnalo alla view che lo stato della postazione è cambiato"  << endl;
 
 
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
@@ -58,42 +72,42 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
     this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
 
-    cout << "PV: richiedo alla view l'aggiornamento dell'interfaccia"  << endl;
-    mainWindow->updateInterfaccia();
+
+
 }
 
 unsigned int PostazioneVoto::getStatoPV(){
     return (int) this->statoPV;
 }
 
-string PostazioneVoto::getStatoPostazioneAsString() {
-    string stato;
-    switch (this->statoPV) {
-    case (attesa_attivazione):
-        stato = "in attesa di attivazione con password";
-        break;
-    case (libera):
-        stato = "postazione libera";
-        break;
-    case (attesa_abilitazione):
-        stato = "in attesa di abilitazione con OTP";
-        break;
-    case (votazione_in_corso):
-        stato = "in corso";
-        break;
-    case (votazione_completata):
-        stato = "votazione completata";
-        break;
-    case (errore):
-        stato = "errore";
-        break;
-    case (offline):
-        stato = "offline";
-        break;
+//string PostazioneVoto::getStatoPostazioneAsString() {
+//    string stato;
+//    switch (this->statoPV) {
+//    case (attesa_attivazione):
+//        stato = "in attesa di attivazione con password";
+//        break;
+//    case (libera):
+//        stato = "postazione libera";
+//        break;
+//    case (attesa_abilitazione):
+//        stato = "in attesa di abilitazione con OTP";
+//        break;
+//    case (votazione_in_corso):
+//        stato = "in corso";
+//        break;
+//    case (votazione_completata):
+//        stato = "votazione completata";
+//        break;
+//    case (errore):
+//        stato = "errore";
+//        break;
+//    case (offline):
+//        stato = "offline";
+//        break;
 
-    }
-    return stato;
-}
+//    }
+//    return stato;
+//}
 
 bool PostazioneVoto::voteAuthorizationWithOTP() {
     //richiamare interfaccia di verifica dell'OTP
@@ -139,10 +153,10 @@ void PostazioneVoto::compilaScheda() {
     //TODO
 } //estrae i dati dalla schermata di compilazione di una singola scheda e inserisce un elemento nel vettore delle schedeCompilate
 
-int PostazioneVoto::runServicesToSeggio() {
+void PostazioneVoto::runServicesToSeggio() {
 
-    server_thread = thread(&PostazioneVoto::runServerListenSeggio, this);
-    return 0;
+    server_thread = std::thread(&PostazioneVoto::runServerListenSeggio, this);
+
 }
 
 //metodi per la cifratura del voto
@@ -166,10 +180,19 @@ void PostazioneVoto::runServerListenSeggio(){
     this->mutex_stdout.lock();
     cout << "PV: avvio del pv_server per rispondere alle richieste del seggio" << endl;
     this->mutex_stdout.unlock();
-    while(this->runServerPV){
+
+    mutex_run_server.lock();
+    bool running = this->runServerPV;
+    mutex_run_server.unlock();
+
+    while(running){
         //attesa di una richiesta dal seggio
         this->pv_server->ascoltaSeggio();
         //prosegue rimettendosi in ascolto al ciclo successivo, se runServerPV ha valore booleano true
+
+        mutex_run_server.lock();
+        running = this->runServerPV;
+        mutex_run_server.unlock();
     }
 
     this->mutex_stdout.lock();
@@ -177,17 +200,18 @@ void PostazioneVoto::runServerListenSeggio(){
     this->mutex_stdout.unlock();
 
     delete this->pv_server;
-    // il thread che eseguiva la funzione termina se la funzione arriva alla fine
-    return;
+
 
 }
 
 void PostazioneVoto::backToPostazioneAttiva(){
-    mainWindow->mostraInterfacciaPostazioneAttiva();
+    //mainWindow->mostraInterfacciaPostazioneAttiva();
 }
 
 void PostazioneVoto::stopServerPV(){
+    mutex_run_server.lock();
     this->runServerPV = false;
+    mutex_run_server.unlock();
     //predispongo il server per l'interruzione
 
     this->pv_server->setStopServer(true);
@@ -201,4 +225,17 @@ void PostazioneVoto::stopServerPV(){
 
     //implementare----->>>>
     this->pv_client->stopLocalServer(localhost);
+
+}
+
+
+void PostazioneVoto::run(){
+    this->setStatoPV(statiPV::attesa_attivazione);
+
+    //avvia il server thread di ascolto per fornire i servizi al seggio
+    runServicesToSeggio();
+    // il thread che eseguiva la funzione termina se la funzione arriva alla fine
+
+    server_thread.join();
+    return;
 }

@@ -16,6 +16,8 @@
 #include "sslserver.h"
 #include "mainwindowpv.h"
 
+#include <QtCore>
+#include <QThread>
 
 using namespace std;
 using namespace tinyxml2;
@@ -24,10 +26,25 @@ class SSLClient;
 class SSLServer;
 class MainWindowPV;
 
-class PostazioneVoto {
+class PostazioneVoto : public QThread
+{
+    Q_OBJECT
+
+signals:
+    void stateChange(unsigned int);
+
+public slots:
+    void validatePassKey(QString pass);
+    void stopServerPV();
+
+
 public:
-    PostazioneVoto(MainWindowPV *m);
+    explicit PostazioneVoto(QObject *parent = 0);
     virtual ~PostazioneVoto();
+
+    //funzione eseguita quando viene avviata l'esecuzione del thread
+    void run();
+
     enum statiPV {
         attesa_attivazione,
         libera,
@@ -46,20 +63,20 @@ public:
 
     //comunica con l'otp server provider per fornire il codice inserito, restituisce true, se il codice inserito è esatto
     bool enablingPV();
-    int runServicesToSeggio();
+    void runServicesToSeggio();
 
 
-    void stopServerPV();
 
     mutex mutex_stdout;
+    QMutex mutex_run_server;
 
+    bool setHTAssociato(unsigned int tokenCod);
+    void backToPostazioneAttiva();
 
-     bool setHTAssociato(unsigned int tokenCod);
-     void backToPostazioneAttiva();
 private:
 
-     //dati membro
-    MainWindowPV *mainWindow;
+    //dati membro
+    //MainWindowPV *mainWindow;
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
     unsigned int sessionKey_PV_Urna; //chiave privata presente sulla smart card
     unsigned int publicKeyPV; //prelevato dalla SC all'atto dell'inizializzazione
@@ -68,7 +85,7 @@ private:
     unsigned short int idProceduraVoto;
     tinyxml2::XMLDocument * pSchedeVoto;
 
-    unsigned int timeout;
+    //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
     unsigned int symKeyAES; //chiave per la cifratura simmetrica
     unsigned int ivCBC; //valore iniziale per CBC
@@ -78,7 +95,7 @@ private:
     SSLClient *pv_client;
     SSLServer *pv_server;
 
-    thread server_thread;
+    std::thread server_thread;
     void runServerListenSeggio();
 
     bool runServerPV;
@@ -91,7 +108,7 @@ protected:
 
     void inactivitySessionClose();
 
-    std::string getStatoPostazioneAsString();
+    //std::string getStatoPostazioneAsString();
 
     bool voteAuthorizationWithOTP();
 

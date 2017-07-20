@@ -11,21 +11,32 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->stackedWidget->setCurrentIndex(InterfaccePV::attivazione);
-    pv = new PostazioneVoto(this);
-    pv->setStatoPV(pv->statiPV::attesa_attivazione);
-    cout << "View: postazione avviata" << endl;
     ui->wrongPassword_label->hide();
+
+    //inizializzo il model
+    pv = new PostazioneVoto(this);
+
+    QObject::connect(pv, SIGNAL (stateChange(unsigned int)), this, SLOT (updateInterfaccia(unsigned int)));
+    QObject::connect(this, SIGNAL(checkPassKey(QString)),pv, SLOT(validatePassKey(QString)));
+    QObject::connect(this, SIGNAL(stopThreads()), pv, SLOT(stopServerPV()));
+
+    //avvio il thread del model
+    pv->start();
+
+    cout << "View: postazione avviata" << endl;
+
 }
 
 MainWindowPV::~MainWindowPV()
 {
-    delete pv;
+    pv->wait();
     delete ui;
 }
 
 void MainWindowPV::on_exit_button_clicked()
 {
-     QApplication::quit();
+    emit stopThreads();
+    QApplication::quit();
 }
 
 void MainWindowPV::on_attiva_button_clicked()
@@ -34,18 +45,21 @@ void MainWindowPV::on_attiva_button_clicked()
     //TODO
     //usare la password inserita come chiave di sessione per calcolare un valore mac
     //sul valore della procedura di voto e inviarlo all'urna
-    QString pass = ui->passwordPV_lineEdit->text();
-    if(pass=="pv1"){
-        ui->stackedWidget->setCurrentIndex(InterfaccePV::disponibile);
-        ui->passwordPV_lineEdit->setText("");
-        pv->setStatoPV(PostazioneVoto::libera);
-        cout << "View: postazione attiva" << endl;
-        //avvio server in ascolto del seggio
-        pv->runServicesToSeggio();
-    }
-    else{
-        ui->wrongPassword_label->show();
-    }
+    QString passKey = ui->passwordPV_lineEdit->text();
+    emit checkPassKey(passKey);
+
+    //spostare su una funzione di tipo public slots, chiamata dalla postazione attraverso un signale, passando il valore bool riguardante l'esito della verifica della passKey
+    //    if(passKey=="pv1"){
+    //        ui->stackedWidget->setCurrentIndex(InterfaccePV::disponibile);
+    //        ui->passwordPV_lineEdit->setText("");
+    //        pv->setStatoPV(PostazioneVoto::libera);
+    //        cout << "View: postazione attiva" << endl;
+    //        //avvio server in ascolto del seggio
+    //        pv->runServicesToSeggio();
+    //    }
+    //    else{
+    //        ui->wrongPassword_label->show();
+    //    }
 }
 
 void MainWindowPV::mostraInterfacciaAbilitazioneWithOTP(){
@@ -61,13 +75,14 @@ void MainWindowPV::on_pushButton_2_clicked()
     //chiusura app temporanea
 
 
-    pv->stopServerPV();
+    //pv->stopServerPV();
+    emit stopThreads();
 
     QApplication::quit();
 }
 
-void MainWindowPV::updateInterfaccia(){
-    int statoPV = pv->getStatoPV();
+void MainWindowPV::updateInterfaccia(unsigned int statoPV){
+    //int statoPV = pv->getStatoPV();
 
     switch(statoPV){
     case pv->statiPV::attesa_attivazione:

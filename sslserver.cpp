@@ -93,7 +93,7 @@ void SSLServer::ascoltaSeggio(){
         //sezione 1
         //se non è stata settata l'interruzione del server, lancia il thread per servire la richiesta
         //commentare la sezione 2 per usare questa sezione
-        thread t (&SSLServer::Servlet, this, client_sock);
+        std::thread t (&SSLServer::Servlet, this, client_sock);
         t.detach();
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: start a thread..." << endl;

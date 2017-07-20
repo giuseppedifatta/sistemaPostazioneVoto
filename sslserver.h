@@ -22,8 +22,7 @@ using namespace std;
 
 class PostazioneVoto;
 
-class SSLServer
-{
+class SSLServer{
 public:
 
     SSLServer(PostazioneVoto *pv);

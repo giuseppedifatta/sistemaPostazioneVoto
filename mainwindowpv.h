@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "postazionevoto.h"
 #include <QObject>
+
 class PostazioneVoto;
 namespace Ui {
 class MainWindowPV;
@@ -30,7 +31,7 @@ public:
     explicit MainWindowPV(QWidget *parent = 0);
     ~MainWindowPV();
 
-    void updateInterfaccia();
+
     void mostraInterfacciaAbilitazioneWithOTP();
     void mostraInterfacciaPostazioneAttiva();
 private slots:
@@ -40,6 +41,12 @@ private slots:
 
 
     void on_pushButton_2_clicked();
+
+public slots:
+    void updateInterfaccia(unsigned int statoPV);
+signals:
+    void checkPassKey(QString passKey);
+    void stopThreads();
 };
 
 #endif // MAINWINDOWPV_H
