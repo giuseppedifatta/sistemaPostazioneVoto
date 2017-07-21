@@ -20,32 +20,23 @@ using namespace std;
 #define SERVER_PORT "4433"
 
 
-SSLClient::SSLClient(){
+SSLClient::SSLClient(PostazioneVoto *pv){
+    this->pvChiamante = pv;
+
     this->server_sock = 0;
     /* ---------------------------------------------------------- *
      * Create the Input/Output BIO's.                             *
      * ---------------------------------------------------------- */
-    outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
-    ssl = nullptr;
-
+    this->outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
+    this->ssl = nullptr;
+    this->server_sock = 0;
     /* ---------------------------------------------------------- *
      * Function that initialize openssl for correct work.		  *
      * ---------------------------------------------------------- */
     this->init_openssl_library();
 
-    const SSL_METHOD *method;
-    method = TLSv1_2_client_method();
+    this->createClientContext();
 
-    /* ---------------------------------------------------------- *
-     * Try to create a new SSL context                            *
-     * ---------------------------------------------------------- */
-    if ((this->ctx = SSL_CTX_new(method)) == NULL)
-        BIO_printf(this->outbio, "ClientPV: Unable to create a new SSL context structure.\n");
-
-    /* ---------------------------------------------------------- *
-     * Disabling SSLv2 and SSLv3 will leave TSLv1 for negotiation    *
-     * ---------------------------------------------------------- */
-    SSL_CTX_set_options(this->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
     char certFile[] = "/home/giuseppe/myCA/intermediate/certs/client.cert.pem";
     char keyFile[] = "/home/giuseppe/myCA/intermediate/private/client.key.pem";
@@ -66,61 +57,110 @@ SSLClient::~SSLClient(){
     SSL_CTX_free(this->ctx);
     BIO_free_all(this->outbio);
 
+    //usare con cura, cancella gli algoritmi e non funziona più nulla
     this->cleanup_openssl();
 
 }
-void SSLClient::connectTo(const char* hostIP /*hostname*/){
-   const char * port = SERVER_PORT;
 
 
-   int res = create_socket(hostIP /*hostname*/,port);
-   //a questo punto la socket del server è stata creata e settata in this->server_sock
+SSL * SSLClient::connectTo(const char* hostIP/*hostname*/){
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: Connecting to " << hostIP << endl;
+    pvChiamante->mutex_stdout.unlock();
 
-   if (res == 0){
-       BIO_printf(this->outbio, "ClientPV: Successfully create the socket for TCP connection to: %s.\n",
-                  hostIP /*hostname*/);
-   }
-   else {
-       BIO_printf(this->outbio, "ClientPV: Unable to create the socket for TCP connection to: %s.\n",
-                  hostIP /*hostname*/);
-   }
+    this->hostIPAddress = hostIP;
 
-   /* ---------------------------------------------------------- *
-    * Create new SSL connection state object                     *
-    * ---------------------------------------------------------- */
-   this->ssl = SSL_new(this->ctx);
+    const char  port[] = SERVER_PORT;
 
-   //cout << "ClientPV:ConnectTo: " << this->ssl << endl;
-   /* ---------------------------------------------------------- *
-    * Make the underlying TCP socket connection                  *
-    * ---------------------------------------------------------- */
+    /* ---------------------------------------------------------- *
+     * Create new SSL connection state object                     *
+     * ---------------------------------------------------------- */
+    this->ssl = SSL_new(this->ctx);
+    //    pvChiamante->mutex_stdout.lock();
+    //    cout << "ClientPV: ssl pointer: " << this->ssl << endl;
+    //    pvChiamante->mutex_stdout.unlock();
 
-   /* ---------------------------------------------------------- *
-    * Attach the SSL session to the socket descriptor            *
-    * ---------------------------------------------------------- */
 
-   if (SSL_set_fd(this->ssl, this->server_sock) != 1) {
-       BIO_printf(this->outbio, "ClientPV: Error: Connection to %s failed", hostIP /*hostname*/);
-   }
-   else
-       BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", hostIP /*hostname*/);
-   /* ---------------------------------------------------------- *
-    * Try to SSL-connect here, returns 1 for success             *
-    * ---------------------------------------------------------- */
-   if (SSL_connect(this->ssl) != 1) //SSL handshake
-       BIO_printf(this->outbio, "ClientPV: Error: Could not build a SSL session to: %s.\n",
-                  hostIP /*hostname*/);
-   else
-       BIO_printf(this->outbio, "ClientPV: Successfully enabled SSL/TLS session to: %s.\n",
-                  hostIP /*hostname*/);
-   ShowCerts();
-   verify_ServerCert(hostIP /*hostname*/);
-   //SSL_set_connect_state(this->ssl);
+    /* ---------------------------------------------------------- *
+     * Make the underlying TCP socket connection                  *
+     * ---------------------------------------------------------- */
+    int ret = create_socket(port);
 
-   return;
+
+    if (ret == 0){
+
+        pvChiamante->mutex_stdout.lock();
+        BIO_printf(this->outbio,"ClientPV: Successfully create the socket for TCP connection to: %s \n",
+                   this->hostIPAddress /*hostname*/);
+        pvChiamante->mutex_stdout.unlock();
+    }
+    else {
+
+
+        pvChiamante->mutex_stdout.lock();
+        BIO_printf(this->outbio,"ClientPV: Unable to create the socket for TCP connection to: %s \n",
+                   this->hostIPAddress /*hostname*/);
+        pvChiamante->mutex_stdout.unlock();
+        SSL_free(this->ssl);
+        this->ssl = nullptr;
+        if(close(this->server_sock) == 0){
+            cerr << "ClientPV: chiusura 1 socket server" << endl;
+        }
+        return this->ssl;
+    }
+
+    /* ---------------------------------------------------------- *
+     * Attach the SSL session to the socket descriptor            *
+     * ---------------------------------------------------------- */
+
+    if (SSL_set_fd(this->ssl, this->server_sock) != 1) {
+
+        pvChiamante->mutex_stdout.lock();
+        BIO_printf(this->outbio, "ClientPV: Error: Connection to %s failed \n", this->hostIPAddress /*hostname*/);
+        pvChiamante->mutex_stdout.unlock();
+
+        SSL_free(this->ssl);
+        this->ssl = nullptr;
+        if(close(this->server_sock) == 0){
+            cerr << "ClientPV: chiusura 2 socket server" << endl;
+        }
+        return this->ssl;
+    }
+    else
+        pvChiamante->mutex_stdout.lock();
+    BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", this->hostIPAddress /*hostname*/);
+    pvChiamante->mutex_stdout.unlock();
+    /* ---------------------------------------------------------- *
+     * Try to SSL-connect here, returns 1 for success             *
+     * ---------------------------------------------------------- */
+    ret = SSL_connect(this->ssl);
+    if (ret != 1){ //SSL handshake
+
+        pvChiamante->mutex_stdout.lock();
+        BIO_printf(this->outbio, "ClientPV: Error: Could not build a SSL session to: %s\n",
+                   this->hostIPAddress /*hostname*/);
+        pvChiamante->mutex_stdout.unlock();
+
+        SSL_free(this->ssl);
+        this->ssl = nullptr;
+        if(close(this->server_sock) == 0){
+            cerr << "ClientPV: chiusura 3 socket server" << endl;
+        }
+        return this->ssl;
+    }
+    else{
+        pvChiamante->mutex_stdout.lock();
+        BIO_printf(this->outbio, "ClientPV: Successfully enabled SSL/TLS session to: %s\n",
+                   this->hostIPAddress /*hostname*/);
+        pvChiamante->mutex_stdout.unlock();
+    }
+    this->ShowCerts();
+    this->verify_ServerCert();
+
+    return this->ssl;
 }
 
-void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int idPV, unsigned int statoPV){
+void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
     //comunica al seggio come è cambiato lo stato della postazione di voto.
     cout << "ClientPV:Try to update..." << endl;
 
@@ -142,7 +182,7 @@ void SSLClient::updateStatoPVtoSeggio(const char * hostnameSeggio, unsigned int 
 
 
     BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
-               hostnameSeggio);
+               this->hostIPAddress);
 
     int ret = SSL_shutdown(this->ssl);
     if (ret == 0){
@@ -175,7 +215,23 @@ void SSLClient::init_openssl_library() {
 
 }
 
-int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port) {
+void SSLClient::createClientContext(){
+    const SSL_METHOD *method;
+    method = TLSv1_2_client_method();
+
+    /* ---------------------------------------------------------- *
+     * Try to create a new SSL context                            *
+     * ---------------------------------------------------------- */
+    if ((this->ctx = SSL_CTX_new(method)) == NULL)
+        BIO_printf(this->outbio, "ClientPV: Unable to create a new SSL context structure.\n");
+
+    /* ---------------------------------------------------------- *
+     * Disabling SSLv2 and SSLv3 will leave TSLv1 for negotiation    *
+     * ---------------------------------------------------------- */
+    SSL_CTX_set_options(this->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+}
+
+int SSLClient::create_socket(const char * port) {
     /* ---------------------------------------------------------- *
      * create_socket() creates the socket & TCP-connect to server *
      * non specifica per SSL
@@ -190,23 +246,32 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
     struct sockaddr_in dest_addr;
 
     unsigned int portCod = atoi(port);
-    /* decommentare la sezione se si passa alla funzione l'hostname invece dell'ip dell'host
+
+    /* decommentare la sezione se si passa all'hostname invece dell'ip dell'host
     if ((host = gethostbyname(hostname)) == NULL) {
         BIO_printf(this->outbio, "ClientPV: Error: Cannot resolve hostname %s.\n", hostname);
         abort();
     }
     */
 
+
+
+
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(portCod);
+
+    /* decommentare la sezione se si passa all'hostname invece dell'ip dell'host
+    dest_addr.sin_addr.s_addr = *(long*) (host->h_addr);
+
+    */
+
+    // commentare la riga sotto se non si vuole usare l'ip dell'host, ma l'hostname
+    dest_addr.sin_addr.s_addr = inet_addr(this->hostIPAddress);
+
     /* ---------------------------------------------------------- *
      * create the basic TCP socket                                *
      * ---------------------------------------------------------- */
     this->server_sock = socket(AF_INET, SOCK_STREAM, 0);
-
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(portCod);
-    //dest_addr.sin_addr.s_addr = *(long*) (host->h_addr);
-    // commentare la riga sotto se non si vuole usare l'ip dell'host, ma l'hostname
-    dest_addr.sin_addr.s_addr = inet_addr(hostIP);
 
     /* ---------------------------------------------------------- *
      * Zeroing the rest of the struct                             *
@@ -223,18 +288,15 @@ int SSLClient::create_socket(const char * hostIP /*hostname*/,const char * port)
 
     if (res  == -1) {
         BIO_printf(this->outbio, "ClientPV: Error: Cannot connect to host %s [%s] on port %d.\n",
-                   hostIP /*hostname*/, address_printable, portCod);
+                   this->hostIPAddress /*hostname*/, address_printable, portCod);
     } else {
         BIO_printf(this->outbio, "ClientPV: Successfully connect to host %s [%s] on port %d.\n",
-                   hostIP /*hostname*/, address_printable, portCod);
-
+                   this->hostIPAddress /*hostname*/, address_printable, portCod);
+        cout << "ClientPV:Descrittore socket: "<< server_sock << endl;
     }
 
-    cout << "ClientPV:Descrittore socket: "<< server_sock << endl;
     return res;
 }
-
-
 
 void SSLClient::ShowCerts() {
     X509 *peer_cert;
@@ -283,7 +345,7 @@ void SSLClient::configure_context(char* CertFile, char* KeyFile, char * ChainFil
 
 }
 
-void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
+void SSLClient::verify_ServerCert() {
 
 
     // Declare X509 structure
@@ -303,12 +365,14 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
     // Get the remote certificate into the X509 structure
 
     peer_cert = SSL_get_peer_certificate(this->ssl);
-    if (peer_cert == NULL)
+    if (peer_cert == NULL){
         BIO_printf(this->outbio, "ClientPV: Error: Could not get a certificate from: %s.\n",
-                   hostIP /*hostname*/);
-    else
+                   this->hostIPAddress /*hostname*/);
+    }
+    else{
         BIO_printf(this->outbio, "ClientPV: Retrieved the server's certificate from: %s.\n",
-                   hostIP /*hostname*/);
+                   this->hostIPAddress /*hostname*/);
+    }
 
 
     // extract various certificate information
@@ -318,9 +382,9 @@ void SSLClient::verify_ServerCert(const char * hostIP /*hostname*/) {
 
     // display the cert subject here
 
-//    BIO_printf(this->outbio, "ClientPV: Displaying the certificate subject data:\n");
-//    X509_NAME_print_ex(this->outbio, certname, 0, 0);
-//    BIO_printf(this->outbio, " \n");
+    //    BIO_printf(this->outbio, "ClientPV: Displaying the certificate subject data:\n");
+    //    X509_NAME_print_ex(this->outbio, certname, 0, 0);
+    //    BIO_printf(this->outbio, " \n");
 
     //Initialize the global certificate validation store object.
     if (!(store = X509_STORE_new()))
@@ -383,7 +447,7 @@ void SSLClient::cleanup_openssl(){
     EVP_cleanup();
 }
 
-void SSLClient::stopLocalServer(const char* localhost/*hostname*/){
+void SSLClient::stopLocalServer(){
     //questa funzione contatta il server locale, ma non deve fare alcuna operazione se non quella
     //di sbloccare il server locale dallo stato di attesa di una nuova connessione, così da portare
     //al ricontrollo della condizione del while che se falsa, porta
@@ -392,16 +456,17 @@ void SSLClient::stopLocalServer(const char* localhost/*hostname*/){
 
     //la creazione della socket sblocca il server locale dall'accept della connessione tcp
 
-    create_socket(localhost/*hostname*/, port);
+    this->hostIPAddress="127.0.0.1";
+    create_socket(port);
 
     // avendo impostato a true la variabile bool stopServer, non verrà inizializzata la connessione ssl
     // si passa direttamente alla chiusura delle socket
-    //seggioChiamante->mutex_stdout.lock();
+    //pvChiamante->mutex_stdout.lock();
     cout << "ClientPV: niente da fare... chiudo la socket per il server" << endl;
-    //seggioChiamante->mutex_stdout.unlock();
+    //pvChiamante->mutex_stdout.unlock();
     if(close(this->server_sock) != 0)
     {
-            cerr << "ClientSeggio: errore chiusura socket server" << endl;
+        cerr << "ClientPV: errore chiusura socket server" << endl;
     }
 
 }

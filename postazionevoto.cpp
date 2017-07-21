@@ -13,7 +13,10 @@ using namespace std;
 void PostazioneVoto::validatePassKey(QString pass)
 {
     if(pass == "pv1"){
-        setStatoPV(statiPV::libera);
+        this->setStatoPV(statiPV::libera);
+    }
+    else{
+        emit wrongPassKey();
     }
 }
 
@@ -33,7 +36,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     publicKeyRP = 0;
 
     //init client
-    this->pv_client = new SSLClient();
+    this->pv_client = new SSLClient(this);
 
     //abilito l'avvio del server in ascolto
     mutex_run_server.lock();
@@ -68,9 +71,15 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //iniziare una sessione ssl con la postazione di voto
     const char * postazioneSeggio = "192.168.192.130"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
     //cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
-    this->pv_client->connectTo(postazioneSeggio);
-    //cout << "PV: SSL pointer post-connect: " << this->pv_client->ssl << endl;
-    this->pv_client->updateStatoPVtoSeggio(postazioneSeggio,this->idPostazioneVoto,this->statoPV);
+
+    if(this->pv_client->connectTo(postazioneSeggio)!=nullptr){
+
+        this->pv_client->updateStatoPVtoSeggio(this->idPostazioneVoto,this->statoPV);
+    }
+    else{
+        cerr << "Postazione Seggio non raggiungibile, non è possibile inviare l'aggiornamento di stato" << endl;
+    }
+
 
 
 
@@ -220,11 +229,9 @@ void PostazioneVoto::stopServerPV(){
     cout << "PV: il ServerPV sta per essere fermato" << endl;
     this->mutex_stdout.unlock();
 
-    //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto
-    const char * localhost = "127.0.0.1";
+    //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto    
 
-    //implementare----->>>>
-    this->pv_client->stopLocalServer(localhost);
+    this->pv_client->stopLocalServer();
 
 }
 

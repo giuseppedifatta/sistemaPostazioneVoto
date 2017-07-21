@@ -32,6 +32,7 @@ class PostazioneVoto : public QThread
 
 signals:
     void stateChange(unsigned int);
+    void wrongPassKey();
 
 public slots:
     void validatePassKey(QString pass);

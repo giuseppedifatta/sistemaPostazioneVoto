@@ -36,14 +36,12 @@ public:
     void mostraInterfacciaPostazioneAttiva();
 private slots:
     void on_exit_button_clicked();
-
     void on_attiva_button_clicked();
-
-
     void on_pushButton_2_clicked();
 
 public slots:
     void updateInterfaccia(unsigned int statoPV);
+    void messageErrorPassword();
 signals:
     void checkPassKey(QString passKey);
     void stopThreads();

@@ -50,6 +50,8 @@ SSLServer::SSLServer(PostazioneVoto *pv){
     this->listen_sock = this->openListener(atoi(PORT));
     this->outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
 
+    setStopServer(false);
+
 }
 
 SSLServer::~SSLServer(){

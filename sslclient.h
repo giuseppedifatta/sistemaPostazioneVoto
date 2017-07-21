@@ -7,31 +7,41 @@
 #include <openssl/conf.h>
 #include <openssl/err.h>
 
+#include "postazionevoto.h"
+class PostazioneVoto;
+
 class SSLClient
 {
 private:
 
+
+    //dati membro per la connessione SSL
     SSL_CTX *ctx;
     int server_sock;
     BIO * outbio;
+    SSL * ssl;
+    const char * hostIPAddress; //indirizzo IP del seggio o dell'urna
+
+    PostazioneVoto *pvChiamante;
 
     //metodi privati
     void init_openssl_library();
-    int create_socket(const char *hostIP, const char * port);
+    void createClientContext();
+    int create_socket(const char * port);
     void ShowCerts();
     void configure_context(char* CertFile, char* KeyFile, char * ChainFile);
-    void verify_ServerCert(const char * hostname);
+    void verify_ServerCert();
     void cleanup_openssl();
 
     public:
-    SSLClient();
+    SSLClient(PostazioneVoto * pv);
     ~SSLClient();
-    SSL * ssl;
 
-    void connectTo(const char *hostIP);
+
+    SSL *connectTo(const char *hostIP);
     unsigned int getStatoPV();
-    void updateStatoPVtoSeggio(const char * hostnamePV, unsigned int idPV, unsigned int statoPV);
-    void stopLocalServer(const char* localhost/*hostname*/);
+    void updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV);
+    void stopLocalServer();
 
 };
 
