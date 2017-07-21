@@ -36,7 +36,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     publicKeyRP = 0;
 
     //init client
-    this->pv_client = new SSLClient(this);
+    //this->pv_client = new SSLClient(this);
 
     //abilito l'avvio del server in ascolto
     mutex_run_server.lock();
@@ -46,7 +46,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
 
 PostazioneVoto::~PostazioneVoto() {
     // TODO Auto-generated destructor stub
-    delete this->pv_client;
+    // delete this->pv_client;
 }
 
 bool PostazioneVoto::PostazioneVoto::offlinePV() {
@@ -63,26 +63,13 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
 
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
     emit stateChange(nuovoStato);
+    this->mutex_stdout.lock();
+    cout << "PV: segnalato alla view che lo stato della postazione è cambiato"  << endl;
+    this->mutex_stdout.unlock();
 
-    cout << "PV: segnalo alla view che lo stato della postazione è cambiato"  << endl;
-
-
-    //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
-    //iniziare una sessione ssl con la postazione di voto
-    const char * postazioneSeggio = "192.168.192.130"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
-    //cout << "PV: SSL pointer pre-connect: " << this->pv_client->ssl << endl;
-
-    if(this->pv_client->connectTo(postazioneSeggio)!=nullptr){
-
-        this->pv_client->updateStatoPVtoSeggio(this->idPostazioneVoto,this->statoPV);
-    }
-    else{
-        cerr << "Postazione Seggio non raggiungibile, non è possibile inviare l'aggiornamento di stato" << endl;
-    }
-
-
-
-
+    //avvio il thread che si occupa di comunicare il nuovo stato al Seggio
+    std::thread t(&PostazioneVoto::function_thread_sendStatoToSeggio, this,nuovoStato);
+    t.detach();
 }
 
 unsigned int PostazioneVoto::getStatoPV(){
@@ -124,26 +111,22 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
 }
 
 bool PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
-    if(this->HTAssociato == 0 && tokenCod!=0){ //nessun token associato
+    if(this->HTAssociato == 0){ //nessun token associato
         this->HTAssociato = tokenCod;
 
         //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
 
-        //cout << "PV: aggiorno lo stato della postazione di voto..." << endl;
-        //this->setStatoPV(this->statiPV::attesa_abilitazione);
-        cout << "PV: stato postazione di voto aggiornato." << endl;
-
-        //mainWindow->mostraInterfacciaAbilitazioneWithOTP();
-
         return true;
     }
     else{
-        cout << "PV: Resetto l'ht della postazione" << endl;
-        this->HTAssociato = tokenCod;
-
-        //this->setStatoPV(this->statiPV::libera);
+        cerr << "PV: errore di impostazione dell'HT" << endl;
         return false;
     }
+}
+
+void PostazioneVoto::resetHT()
+{
+    this->HTAssociato = 0;
 }
 
 unsigned int PostazioneVoto::getHTAssociato() {
@@ -229,9 +212,10 @@ void PostazioneVoto::stopServerPV(){
     cout << "PV: il ServerPV sta per essere fermato" << endl;
     this->mutex_stdout.unlock();
 
-    //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto    
-
-    this->pv_client->stopLocalServer();
+    //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto
+    SSLClient * pv_client = new SSLClient(this);
+    pv_client->stopLocalServer();
+    delete pv_client;
 
 }
 
@@ -245,4 +229,27 @@ void PostazioneVoto::run(){
 
     server_thread.join();
     return;
+}
+
+void PostazioneVoto::function_thread_sendStatoToSeggio(unsigned int statoPV){
+    //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
+    //iniziare una sessione ssl con la postazione di voto
+    this->mutex_stdout.lock();
+    cout << "Dentro il thread" << endl;
+    this->mutex_stdout.unlock();
+
+    const char * postazioneSeggio = "192.168.192.130"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+
+    SSLClient * pv_client = new SSLClient(this);
+
+    if(pv_client->connectTo(postazioneSeggio)!=nullptr){
+
+        pv_client->updateStatoPVtoSeggio(this->idPostazioneVoto,statoPV);
+    }
+    else{
+        cerr << "PV: Postazione Seggio non raggiungibile, non è possibile inviare l'aggiornamento di stato" << endl;
+    }
+
+
+    delete pv_client;
 }

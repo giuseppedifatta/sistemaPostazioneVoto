@@ -58,7 +58,7 @@ SSLClient::~SSLClient(){
     BIO_free_all(this->outbio);
 
     //usare con cura, cancella gli algoritmi e non funziona più nulla
-    this->cleanup_openssl();
+    //this->cleanup_openssl();
 
 }
 
@@ -162,13 +162,17 @@ SSL * SSLClient::connectTo(const char* hostIP/*hostname*/){
 
 void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
     //comunica al seggio come è cambiato lo stato della postazione di voto.
-    cout << "ClientPV:Try to update..." << endl;
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: Try to update..." << endl;
+    pvChiamante->mutex_stdout.unlock();
 
     stringstream ss;
     ss << idPV;
     string str= ss.str();
     const char * charArray_idPV = str.c_str();
+    pvChiamante->mutex_stdout.lock();
     cout << "ClientPV: idPV to update: " << charArray_idPV << endl;
+    pvChiamante->mutex_stdout.unlock();
 
     //cout << strlen(charArray_idPV) << endl;
     SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
@@ -176,14 +180,16 @@ void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
     stringstream ss1;
     ss1 << statoPV;
     const char *  charArray_statoPV = ss1.str().c_str();
+    pvChiamante->mutex_stdout.lock();
     cout << "ClientPV: statoPV to update: " << charArray_statoPV << endl;
-    //cout << strlen(charArray_statoPV) << endl;
+    pvChiamante->mutex_stdout.unlock();
+
     SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
-
+    pvChiamante->mutex_stdout.lock();
     BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
                this->hostIPAddress);
-
+    pvChiamante->mutex_stdout.unlock();
     int ret = SSL_shutdown(this->ssl);
     if (ret == 0){
         SSL_shutdown(this->ssl);
@@ -222,9 +228,10 @@ void SSLClient::createClientContext(){
     /* ---------------------------------------------------------- *
      * Try to create a new SSL context                            *
      * ---------------------------------------------------------- */
+    pvChiamante->mutex_stdout.lock();
     if ((this->ctx = SSL_CTX_new(method)) == NULL)
         BIO_printf(this->outbio, "ClientPV: Unable to create a new SSL context structure.\n");
-
+    pvChiamante->mutex_stdout.unlock();
     /* ---------------------------------------------------------- *
      * Disabling SSLv2 and SSLv3 will leave TSLv1 for negotiation    *
      * ---------------------------------------------------------- */
@@ -253,9 +260,6 @@ int SSLClient::create_socket(const char * port) {
         abort();
     }
     */
-
-
-
 
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(portCod);
@@ -286,14 +290,16 @@ int SSLClient::create_socket(const char * port) {
      * ---------------------------------------------------------- */
     int res = connect(this->server_sock, (struct sockaddr *) &dest_addr, sizeof(struct sockaddr));
 
+    pvChiamante->mutex_stdout.lock();
     if (res  == -1) {
         BIO_printf(this->outbio, "ClientPV: Error: Cannot connect to host %s [%s] on port %d.\n",
                    this->hostIPAddress /*hostname*/, address_printable, portCod);
     } else {
         BIO_printf(this->outbio, "ClientPV: Successfully connect to host %s [%s] on port %d.\n",
                    this->hostIPAddress /*hostname*/, address_printable, portCod);
-        cout << "ClientPV:Descrittore socket: "<< server_sock << endl;
+        cout << "ClientPV:Descrittore socket: "<< this->server_sock << endl;
     }
+    pvChiamante->mutex_stdout.unlock();
 
     return res;
 }
@@ -365,6 +371,7 @@ void SSLClient::verify_ServerCert() {
     // Get the remote certificate into the X509 structure
 
     peer_cert = SSL_get_peer_certificate(this->ssl);
+    pvChiamante->mutex_stdout.lock();
     if (peer_cert == NULL){
         BIO_printf(this->outbio, "ClientPV: Error: Could not get a certificate from: %s.\n",
                    this->hostIPAddress /*hostname*/);
@@ -373,6 +380,7 @@ void SSLClient::verify_ServerCert() {
         BIO_printf(this->outbio, "ClientPV: Retrieved the server's certificate from: %s.\n",
                    this->hostIPAddress /*hostname*/);
     }
+    pvChiamante->mutex_stdout.unlock();
 
 
     // extract various certificate information
@@ -387,9 +395,11 @@ void SSLClient::verify_ServerCert() {
     //    BIO_printf(this->outbio, " \n");
 
     //Initialize the global certificate validation store object.
-    if (!(store = X509_STORE_new()))
+    if (!(store = X509_STORE_new())){
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ClientPV: Error creating X509_STORE_CTX object\n");
-
+        pvChiamante->mutex_stdout.unlock();
+    }
     // Create the context structure for the validation operation.
     vrfy_ctx = X509_STORE_CTX_new();
 
@@ -405,9 +415,11 @@ void SSLClient::verify_ServerCert() {
     ret = X509_STORE_load_locations(store, chainFile, NULL);
 
 
-    if (ret != 1)
+    if (ret != 1){
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ClientPV: Error loading CA cert or chain file\n");
-
+        pvChiamante->mutex_stdout.unlock();
+}
     /* Initialize the ctx structure for a verification operation:
       Set the trusted cert store, the unvalidated cert, and any  *
      * potential certs that could be needed (here we set it NULL) */
@@ -417,12 +429,17 @@ void SSLClient::verify_ServerCert() {
      * Returns 1 on success, 0 on verification failures, and -1   *
      * for trouble with the ctx object (i.e. missing certificate) */
     ret = X509_verify_cert(vrfy_ctx);
-    BIO_printf(this->outbio, "ClientPV: Verification return code: %d\n", ret);
 
-    if (ret == 0 || ret == 1)
+    pvChiamante->mutex_stdout.lock();
+    BIO_printf(this->outbio, "ClientPV: Verification return code: %d\n", ret);
+    pvChiamante->mutex_stdout.unlock();
+
+    if (ret == 0 || ret == 1){
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ClientPV: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
-
+        pvChiamante->mutex_stdout.unlock();
+}
     /* The error handling below shows how to get failure details  *
      * from the offending certificate.                            */
     if (ret == 0) {
@@ -430,9 +447,12 @@ void SSLClient::verify_ServerCert() {
         error_cert = X509_STORE_CTX_get_current_cert(vrfy_ctx);
         certsubject = X509_NAME_new();
         certsubject = X509_get_subject_name(error_cert);
+
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ClientPV: Verification failed cert:\n");
         X509_NAME_print_ex(this->outbio, certsubject, 0, XN_FLAG_MULTILINE);
         BIO_printf(this->outbio, "ClientPV: \n");
+        pvChiamante->mutex_stdout.unlock();
     }
 
     // Free up all structures need for verify certs
@@ -462,8 +482,11 @@ void SSLClient::stopLocalServer(){
     // avendo impostato a true la variabile bool stopServer, non verrà inizializzata la connessione ssl
     // si passa direttamente alla chiusura delle socket
     //pvChiamante->mutex_stdout.lock();
+    pvChiamante->mutex_stdout.lock();
     cout << "ClientPV: niente da fare... chiudo la socket per il server" << endl;
+    pvChiamante->mutex_stdout.unlock();
     //pvChiamante->mutex_stdout.unlock();
+
     if(close(this->server_sock) != 0)
     {
         cerr << "ClientPV: errore chiusura socket server" << endl;

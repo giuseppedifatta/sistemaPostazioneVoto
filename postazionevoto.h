@@ -72,6 +72,7 @@ public:
     QMutex mutex_run_server;
 
     bool setHTAssociato(unsigned int tokenCod);
+    void resetHT();
     void backToPostazioneAttiva();
 
 private:
@@ -93,11 +94,14 @@ private:
 
     statiPV statoPV;
 
-    SSLClient *pv_client;
+    //SSLClient *pv_client;
     SSLServer *pv_server;
 
     std::thread server_thread;
     void runServerListenSeggio();
+
+    //funzione per il thread client che deve inviare il cambio di stato alla postazione seggio
+    void function_thread_sendStatoToSeggio(unsigned int statoPV);
 
     bool runServerPV;
 protected:

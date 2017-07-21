@@ -60,6 +60,7 @@ SSLServer::~SSLServer(){
 
     BIO_free_all(this->outbio);
     SSL_CTX_free(this->ctx);
+
     this->cleanup_openssl();
 
     close(listen_sock);
@@ -84,9 +85,10 @@ void SSLServer::ascoltaSeggio(){
         exit(EXIT_FAILURE);
     }
     else{
+        unsigned int port_assigned = ntohs(client_addr.sin_port);
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: Un client ha iniziato la connessione su una socket con fd:" << client_sock << endl;
-        cout << "ServerPV: Client's Port assegnata: "<< ntohs(client_addr.sin_port)<< endl;
+        cout << "ServerPV: Client's Port assegnata: "<< port_assigned << endl;
         pvChiamante->mutex_stdout.unlock();
 
     }
@@ -98,7 +100,7 @@ void SSLServer::ascoltaSeggio(){
         std::thread t (&SSLServer::Servlet, this, client_sock);
         t.detach();
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV: start a thread..." << endl;
+        cout << "ServerPV: sub_thread started..." << endl;
         pvChiamante->mutex_stdout.unlock();
 
 
@@ -113,27 +115,27 @@ void SSLServer::ascoltaSeggio(){
 
         //        Servlet(client_sock);
 
-
-
-
-
-
-
     }
     else{
         //termina l'ascolto
-        pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV: interruzione del server in corso..." << endl;
+
 
         int ret = close(client_sock);
+
+
+        cout << "ServerPV: interruzione del server in corso..." << endl;
         if(ret ==0){
+            pvChiamante->mutex_stdout.lock();
             cout << "ServerPV: successo chiusura socket per il client" << endl;
+            pvChiamante->mutex_stdout.unlock();
         }
         ret = close(this->listen_sock);
         if(ret ==0){
+            pvChiamante->mutex_stdout.lock();
             cout << "ServerPV: successo chiusura socket del listener" << endl;
+            pvChiamante->mutex_stdout.unlock();
         }
-        pvChiamante->mutex_stdout.unlock();
+
         return;
     }
 
@@ -150,7 +152,9 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
 
 
     if (SSL_accept(ssl) <= 0) {/* do SSL-protocol handshake */
+        pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: error in handshake" << endl;
+        pvChiamante->mutex_stdout.unlock();
         ERR_print_errors_fp(stderr);
 
     }
@@ -202,7 +206,10 @@ void SSLServer::Servlet(int client_sock) {/* Serve the connection -- threadable 
     int sd;
     sd = SSL_get_fd(ssl); /* get socket connection */
 
-    close(sd); /* close connection */
+    /* close connection */
+    if(close(sd)!=0){
+        cerr << "ServerPV: Errore di chiusura socket sub_thread " << endl;
+    }
     SSL_free(ssl);
 
     pvChiamante->mutex_stdout.lock();
@@ -268,26 +275,28 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         stringstream ss1;
         ss1 << pvChiamante->getStatoPV();
         const char *  charArray_statoPV = ss1.str().c_str();
+
+        pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: statoPV richiesto dal seggio: " << charArray_statoPV << endl;
-        //cout << strlen(charArray_statoPV) << endl;
+        pvChiamante->mutex_stdout.unlock();
+
+
         SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
         break;
     }
     case servizi::removeAssociation:{
         int success = -1;
-        if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione) || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
+        if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione)
+                || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
             //TODO imposta stato postazione a libera
 
-            if(pvChiamante->setHTAssociato(0) == false){
-                pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
-
-                //settiamo il valore 0 in caso di operazione riuscita
-                success = 0;
-                pvChiamante->mutex_stdout.lock();
-                cout << "ServerPV: associazione rimossa!! "<< endl;
-                pvChiamante->mutex_stdout.unlock();
-            }
+            pvChiamante->resetHT();
+            pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
+            success = 0;
+            pvChiamante->mutex_stdout.lock();
+            cout << "ServerPV: associazione rimossa!! "<< endl;
+            pvChiamante->mutex_stdout.unlock();
 
         }
 
@@ -302,7 +311,6 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         //inviamo al seggio un codice relativo all'esito dell'operazione
         const char * successValue = str.c_str();
         SSL_write(ssl,successValue,strlen(successValue));
-
         break;
     }
     case servizi::freePV:
@@ -460,12 +468,13 @@ void SSLServer::print_cn_name(const char* label, X509_NAME* const name) {
 
     if (utf8)
         OPENSSL_free(utf8);
-    pvChiamante->mutex_stdout.lock();
-    if (!success){
 
+    if (!success){
+        pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: " << label << ": <not available>" << endl;
+        pvChiamante->mutex_stdout.unlock();
     }
-    pvChiamante->mutex_stdout.unlock();
+
 }
 
 void SSLServer::print_san_name(const char* label, X509* const cert) {
@@ -618,9 +627,10 @@ void SSLServer::ShowCerts(SSL * ssl) {
     char *line = NULL;
     cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
 
-    pvChiamante->mutex_stdout.lock();
+
     ERR_print_errors_fp(stderr);
     if (cert != NULL) {
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "SeggioPV:Client certificates:\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         BIO_printf(this->outbio, "SeggioPV:Subject: %s\n", line);
@@ -628,10 +638,12 @@ void SSLServer::ShowCerts(SSL * ssl) {
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         BIO_printf(this->outbio, "SeggioPV:Issuer: %s\n", line);
         free(line);
-
-    } else
+        pvChiamante->mutex_stdout.unlock();
+    } else{
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "SeggioPV:No certificates.\n");
-    pvChiamante->mutex_stdout.unlock();
+        pvChiamante->mutex_stdout.unlock();
+    }
     X509_free(cert);
 
 }
@@ -709,7 +721,9 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
 
     ret = X509_STORE_load_locations(store, chainFile, NULL);
     if (ret != 1){
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ServerPV: Error loading CA cert or chain file\n");
+        pvChiamante->mutex_stdout.unlock();
     }
     /* ---------------------------------------------------------- *
      * Initialize the ctx structure for a verification operation: *
@@ -724,11 +738,16 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
      * for trouble with the ctx object (i.e. missing certificate) *
      * ---------------------------------------------------------- */
     ret = X509_verify_cert(vrfy_ctx);
+
+    pvChiamante->mutex_stdout.lock();
     BIO_printf(this->outbio, "ServerPV: Verification return code: %d\n", ret);
+    pvChiamante->mutex_stdout.unlock();
 
     if (ret == 0 || ret == 1){
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ServerPV: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
+        pvChiamante->mutex_stdout.unlock();
     }
     /* ---------------------------------------------------------- *
      * The error handling below shows how to get failure details  *
@@ -739,9 +758,12 @@ void SSLServer::verify_ClientCert(SSL *ssl) {
         error_cert = X509_STORE_CTX_get_current_cert(vrfy_ctx);
         certsubject = X509_NAME_new();
         certsubject = X509_get_subject_name(error_cert);
+
+        pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ServerPV: Verification failed cert:\n");
         X509_NAME_print_ex(this->outbio, certsubject, 0, XN_FLAG_MULTILINE);
         BIO_printf(this->outbio, "\n");
+        pvChiamante->mutex_stdout.unlock();
     }
 
     /* ---------------------------------------------------------- *
@@ -770,17 +792,21 @@ int SSLServer::myssl_fwrite(const char * infile) {
         is.seekg(0, is.beg);
 
         char * buffer = new char[length];
-
-        cout << "ServerPV: Reading " << length << " characters... ";
+        pvChiamante->mutex_stdout.lock();
+        cout << "ServerPV: Reading " << length << " characters... " << endl;
+        pvChiamante->mutex_stdout.unlock();
         // read data as a block:
         is.read(buffer, length);
 
+        pvChiamante->mutex_stdout.lock();
         if (is){
+
             cout << "ServerPV: all characters read successfully." << endl;
         }
         else{
             cout << "ServerPV: error: only " << is.gcount() << " could be read";
         }
+        pvChiamante->mutex_stdout.unlock();
         is.close();
 
 
@@ -789,7 +815,10 @@ int SSLServer::myssl_fwrite(const char * infile) {
         strs << length;
         string temp_str = strs.str();
         const char *info = temp_str.c_str();
+
+        pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: bytes to send:" << info << endl;
+        pvChiamante->mutex_stdout.unlock();
         SSL_write(ssl, info, strlen(info));
         SSL_write(ssl, buffer, length);
         delete[] buffer;
@@ -797,7 +826,9 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
     }
     else{
+        pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: file unreadable" << endl;
+        pvChiamante->mutex_stdout.unlock();
     }
     return 0;
 }
