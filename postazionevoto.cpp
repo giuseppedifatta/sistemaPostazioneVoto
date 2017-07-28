@@ -10,15 +10,7 @@
 
 using namespace std;
 
-void PostazioneVoto::validatePassKey(QString pass)
-{
-    if(pass == "pv1"){
-        this->setStatoPV(statiPV::libera);
-    }
-    else{
-        emit wrongPassKey();
-    }
-}
+
 
 PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
@@ -217,6 +209,16 @@ void PostazioneVoto::stopServerPV(){
     pv_client->stopLocalServer();
     delete pv_client;
 
+}
+
+void PostazioneVoto::validatePassKey(QString pass)
+{
+    if(pass == "pv1"){
+        this->setStatoPV(statiPV::libera);
+    }
+    else{
+        emit wrongPassKey();
+    }
 }
 
 
