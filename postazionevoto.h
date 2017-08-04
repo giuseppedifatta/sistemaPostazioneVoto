@@ -74,6 +74,8 @@ public:
     bool setHTAssociato(unsigned int tokenCod);
     void resetHT();
     void backToPostazioneAttiva();
+    void setIdProceduraVoto(uint idProcedura);
+    string calcolaMAC(string key, string plainText);
 
 private:
 

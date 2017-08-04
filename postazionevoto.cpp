@@ -7,6 +7,16 @@
 
 #include "postazionevoto.h"
 #include <iostream>
+#include "cryptopp/osrng.h"
+#include "cryptopp/cryptlib.h"
+#include "cryptopp/hmac.h"
+#include "cryptopp/sha.h"
+#include "cryptopp/hex.h"
+#include "cryptopp/filters.h"
+#include "cryptopp/secblock.h"
+
+
+using namespace CryptoPP;
 
 using namespace std;
 
@@ -213,12 +223,23 @@ void PostazioneVoto::stopServerPV(){
 
 void PostazioneVoto::validatePassKey(QString pass)
 {
-    if(pass == "pv1"){
-        this->setStatoPV(statiPV::libera);
+    //contatto l'urna per validare la passward
+    const char * ipUrna = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+
+    SSLClient * pv_client = new SSLClient(this);
+
+    if(pv_client->connectTo(ipUrna)!=nullptr){
+
+        if(pv_client->attivaPostazioneVoto(pass.toStdString())){
+            this->setStatoPV(statiPV::libera);
+        }
+        else{
+            emit wrongPassKey();
+        }
     }
-    else{
-        emit wrongPassKey();
-    }
+
+
+
 }
 
 
@@ -254,4 +275,82 @@ void PostazioneVoto::function_thread_sendStatoToSeggio(unsigned int statoPV){
 
 
     delete pv_client;
+}
+
+void PostazioneVoto::setIdProceduraVoto(uint idProcedura){
+    this->idProceduraVoto = idProcedura;
+}
+
+string PostazioneVoto::calcolaMAC(string key, string plainText){
+    //AutoSeededRandomPool prng;
+
+//    SecByteBlock key(16);
+//    prng.GenerateBlock(key, key.size());
+
+    string encodedKey = key;//"11A47EC4465DD95FCD393075E7D3C4EB";
+
+    // Pretty print key
+//    encodedKey.clear();
+//    StringSource ss1(decodedKey, decodedKey.size(), true,
+//        new HexEncoder(
+//            new StringSink(encodedKey)
+//        ) // HexEncoder
+//    ); // StringSource
+
+    cout << "key: " << key << endl;
+    string decodedKey;
+
+    StringSource ss(encodedKey,
+        new HexDecoder(
+            new StringSink(decodedKey)
+        ) // HexDecoder
+    ); // StringSource
+
+    string plain = plainText;//"HMAC Test";
+    string mac, encodedMAC;
+
+    /*********************************\
+    \*********************************/
+
+
+    cout << "plain text: " << plain << endl;
+
+    /*********************************\
+    \*********************************/
+
+
+    //generazione dell'hmac
+    try
+    {
+        //dichiarazione del filtro
+        SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
+        CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
+
+        StringSource ss2(plain, true,
+            new HashFilter(hmac,
+                new StringSink(mac)
+            ) // HashFilter
+        ); // StringSource
+    }
+    catch(const CryptoPP::Exception& e)
+    {
+        cerr << e.what() << endl;
+        exit(1);
+    }
+
+    /*********************************\
+    \*********************************/
+
+    // Pretty print
+    encodedMAC.clear();
+    StringSource ss3(mac, true,
+        new HexEncoder(
+            new StringSink(encodedMAC)
+        ) // HexEncoder
+    ); // StringSource
+
+    cout << "hmac: " << encodedMAC << endl;
+
+    //qui encoded contiene l'hmac
+    return encodedMAC;
 }

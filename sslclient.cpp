@@ -126,10 +126,11 @@ SSL * SSLClient::connectTo(const char* hostIP/*hostname*/){
         }
         return this->ssl;
     }
-    else
+    else{
         pvChiamante->mutex_stdout.lock();
-    BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", this->hostIPAddress /*hostname*/);
-    pvChiamante->mutex_stdout.unlock();
+        BIO_printf(this->outbio, "ClientPV: Ok: Connection to %s \n", this->hostIPAddress /*hostname*/);
+        pvChiamante->mutex_stdout.unlock();
+    }
     /* ---------------------------------------------------------- *
      * Try to SSL-connect here, returns 1 for success             *
      * ---------------------------------------------------------- */
@@ -158,48 +159,6 @@ SSL * SSLClient::connectTo(const char* hostIP/*hostname*/){
     this->verify_ServerCert();
 
     return this->ssl;
-}
-
-void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
-    //comunica al seggio come è cambiato lo stato della postazione di voto.
-    pvChiamante->mutex_stdout.lock();
-    cout << "ClientPV: Try to update..." << endl;
-    pvChiamante->mutex_stdout.unlock();
-
-    stringstream ss;
-    ss << idPV;
-    string str= ss.str();
-    const char * charArray_idPV = str.c_str();
-    pvChiamante->mutex_stdout.lock();
-    cout << "ClientPV: idPV to update: " << charArray_idPV << endl;
-    pvChiamante->mutex_stdout.unlock();
-
-    //cout << strlen(charArray_idPV) << endl;
-    SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
-
-    stringstream ss1;
-    ss1 << statoPV;
-    const char *  charArray_statoPV = ss1.str().c_str();
-    pvChiamante->mutex_stdout.lock();
-    cout << "ClientPV: statoPV to update: " << charArray_statoPV << endl;
-    pvChiamante->mutex_stdout.unlock();
-
-    SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
-
-    pvChiamante->mutex_stdout.lock();
-    BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
-               this->hostIPAddress);
-    pvChiamante->mutex_stdout.unlock();
-    int ret = SSL_shutdown(this->ssl);
-    if (ret == 0){
-        SSL_shutdown(this->ssl);
-    }
-
-    SSL_free(this->ssl);
-
-    if(close(this->server_sock) != 0)
-        cerr << "errore chiusura della socket creata per il server" << endl;
-
 }
 
 void SSLClient::init_openssl_library() {
@@ -276,6 +235,7 @@ int SSLClient::create_socket(const char * port) {
      * create the basic TCP socket                                *
      * ---------------------------------------------------------- */
     this->server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    cout << "Server_sock: " << this->server_sock << endl;
 
     /* ---------------------------------------------------------- *
      * Zeroing the rest of the struct                             *
@@ -491,6 +451,113 @@ void SSLClient::stopLocalServer(){
     {
         cerr << "ClientPV: errore chiusura socket server" << endl;
     }
+
+}
+
+void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
+    //comunica al seggio come è cambiato lo stato della postazione di voto.
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: Try to update..." << endl;
+    pvChiamante->mutex_stdout.unlock();
+
+    stringstream ss;
+    ss << idPV;
+    string str= ss.str();
+    const char * charArray_idPV = str.c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: idPV to update: " << charArray_idPV << endl;
+    pvChiamante->mutex_stdout.unlock();
+
+    //cout << strlen(charArray_idPV) << endl;
+    SSL_write(ssl, charArray_idPV, strlen(charArray_idPV));
+
+    stringstream ss1;
+    ss1 << statoPV;
+    const char *  charArray_statoPV = ss1.str().c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: statoPV to update: " << charArray_statoPV << endl;
+    pvChiamante->mutex_stdout.unlock();
+
+    SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
+
+    pvChiamante->mutex_stdout.lock();
+    BIO_printf(this->outbio, "ClientPV: Finished SSL/TLS connection with server: %s.\n",
+               this->hostIPAddress);
+    pvChiamante->mutex_stdout.unlock();
+    int ret = SSL_shutdown(this->ssl);
+    if (ret == 0){
+        SSL_shutdown(this->ssl);
+    }
+
+    SSL_free(this->ssl);
+
+    if(close(this->server_sock) != 0)
+        cerr << "errore chiusura della socket creata per il server" << endl;
+
+}
+
+bool SSLClient::attivaPostazioneVoto(string sessionKey)
+{
+    bool res = false;
+    //richiesta servizio
+    int serviceCod = serviziUrna::attivazionePV;
+    stringstream ssCod;
+    ssCod << serviceCod;
+    string strCod = ssCod.str();
+    const char * charCod = strCod.c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+    pvChiamante->mutex_stdout.unlock();
+    SSL_write(ssl,charCod,strlen(charCod));
+
+    //ricevo idProceduraVoto
+    uint idProcedura;
+    char cod_idProcedura[128];
+    memset(cod_idProcedura, '\0', sizeof(cod_idProcedura));
+    int bytes = SSL_read(ssl, cod_idProcedura, sizeof(cod_idProcedura));
+    if (bytes > 0) {
+                cod_idProcedura[bytes] = 0;
+                idProcedura = atoi(cod_idProcedura);
+                pvChiamante->setIdProceduraVoto(idProcedura);
+    }
+    else{
+       cerr << "ClientPV: non sono riuscito a ricevere l'idProcedura" << endl;
+    }
+
+
+    string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura)); //implementare
+
+    //invio MAC all'URNA
+
+    const char * charIdProceduraMAC = idProceduraMAC.c_str();
+    //uvChiamante->mutex_stdout.lock();
+    cout << "Invio il MAC all'Urna: " << charIdProceduraMAC << endl;
+    //uvChiamante->mutex_stdout.unlock();
+    SSL_write(ssl,charIdProceduraMAC,strlen(charIdProceduraMAC));
+
+
+    //ricevi esito verifica della chiave di sessione
+    // 0 -> success
+    // 1 -> error
+
+    char buffer[8];
+    memset(buffer, '\0', sizeof(buffer));
+    bytes = SSL_read(ssl,buffer,sizeof(buffer));
+    if(bytes > 0){
+        buffer[bytes] = 0;
+        int result = atoi(buffer);
+
+        if (result == 0){
+            res = true;
+        }
+
+    }
+
+    return res;
+}
+
+void SSLClient::inviaSchedeCompilate()
+{
 
 }
 
