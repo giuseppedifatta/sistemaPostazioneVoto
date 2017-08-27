@@ -34,7 +34,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
 
 
     //connessione all'urna e richiesta di questi dati
-    pSchedeVoto = NULL;
+
     publicKeyRP = 0;
 
     //init client
@@ -139,9 +139,6 @@ unsigned int PostazioneVoto::getIdPostazioneVoto() {
     return this->idPostazioneVoto;
 }
 
-unsigned int PostazioneVoto::getPublicKeyPV() {
-    return this->publicKeyPV;
-} //servizio per l'urna, inutile se le SmartCard delle postazioni voto sono prememorizzate nell'urna, se la PV invia l'id relativo alla SC che è inserita
 
 void PostazioneVoto::compilaScheda() {
     //TODO
@@ -232,6 +229,7 @@ void PostazioneVoto::validatePassKey(QString pass)
 
         if(pv_client->attivaPostazioneVoto(pass.toStdString())){
             this->setStatoPV(statiPV::libera);
+            sessionKey_PV_Urna = pass.toStdString();
         }
         else{
             emit wrongPassKey();
@@ -284,27 +282,27 @@ void PostazioneVoto::setIdProceduraVoto(uint idProcedura){
 string PostazioneVoto::calcolaMAC(string key, string plainText){
     //AutoSeededRandomPool prng;
 
-//    SecByteBlock key(16);
-//    prng.GenerateBlock(key, key.size());
+    //    SecByteBlock key(16);
+    //    prng.GenerateBlock(key, key.size());
 
     string encodedKey = key;//"11A47EC4465DD95FCD393075E7D3C4EB";
 
     // Pretty print key
-//    encodedKey.clear();
-//    StringSource ss1(decodedKey, decodedKey.size(), true,
-//        new HexEncoder(
-//            new StringSink(encodedKey)
-//        ) // HexEncoder
-//    ); // StringSource
+    //    encodedKey.clear();
+    //    StringSource ss1(decodedKey, decodedKey.size(), true,
+    //        new HexEncoder(
+    //            new StringSink(encodedKey)
+    //        ) // HexEncoder
+    //    ); // StringSource
 
     cout << "key: " << key << endl;
     string decodedKey;
 
     StringSource ss(encodedKey,
-        new HexDecoder(
-            new StringSink(decodedKey)
-        ) // HexDecoder
-    ); // StringSource
+                    new HexDecoder(
+                        new StringSink(decodedKey)
+                        ) // HexDecoder
+                    ); // StringSource
 
     string plain = plainText;//"HMAC Test";
     string mac, encodedMAC;
@@ -327,10 +325,10 @@ string PostazioneVoto::calcolaMAC(string key, string plainText){
         CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
 
         StringSource ss2(plain, true,
-            new HashFilter(hmac,
-                new StringSink(mac)
-            ) // HashFilter
-        ); // StringSource
+                         new HashFilter(hmac,
+                                        new StringSink(mac)
+                                        ) // HashFilter
+                         ); // StringSource
     }
     catch(const CryptoPP::Exception& e)
     {
@@ -344,13 +342,149 @@ string PostazioneVoto::calcolaMAC(string key, string plainText){
     // Pretty print
     encodedMAC.clear();
     StringSource ss3(mac, true,
-        new HexEncoder(
-            new StringSink(encodedMAC)
-        ) // HexEncoder
-    ); // StringSource
+                     new HexEncoder(
+                         new StringSink(encodedMAC)
+                         ) // HexEncoder
+                     ); // StringSource
 
     cout << "hmac: " << encodedMAC << endl;
 
     //qui encoded contiene l'hmac
     return encodedMAC;
+}
+
+void PostazioneVoto::addScheda(string scheda)
+{
+    SchedaVoto sv;
+
+    //TODO parsing file xml e inserimento dati nell'oggetto scheda voto da aggiungere al vettore delle schede
+
+    XMLDocument xmlDoc;
+    xmlDoc.Parse(scheda.c_str());
+
+    XMLNode *rootNode = xmlDoc.FirstChild();
+
+    XMLText* textNodeIdProcedura = rootNode->FirstChildElement("idProcedura")->FirstChild()->ToText();
+    uint idProcedura = atoi(textNodeIdProcedura->Value());
+    cout << "idProcedura: " << idProcedura << endl;
+    sv.setIdProceduraVoto(idProcedura);
+
+    XMLText* textNodeIdScheda = rootNode->FirstChildElement("id")->FirstChild()->ToText();
+    uint idScheda = atoi(textNodeIdScheda->Value());
+    cout << "idScheda: " << idScheda << endl;
+    sv.setId(idScheda);
+
+    XMLText* textNodeTipologiaElezione= rootNode->FirstChildElement("tipologiaElezione")->FirstChild()->ToText();
+    uint tipologiaElezione = atoi(textNodeTipologiaElezione->Value());
+    cout << "tipologia elezione: " << tipologiaElezione << endl;
+    sv.setTipoElezione(tipologiaElezione);
+
+    XMLText* textNodeNumeroPreferenze = rootNode->FirstChildElement("numeroPreferenze")->FirstChild()->ToText();
+    uint numeroPreferenze = atoi(textNodeNumeroPreferenze->Value());
+    cout << "Numero preferenze: " << numeroPreferenze << endl;
+    sv.setNumPreferenze(numeroPreferenze);
+
+
+    XMLElement * listeElement = rootNode->FirstChildElement("liste");
+
+    XMLElement * firstListaElement = listeElement->FirstChildElement("lista");
+    XMLElement * lastListaElement = listeElement->LastChildElement("lista");
+
+    XMLElement *listaElement = firstListaElement;
+    bool lastLista = false;
+    do{
+
+        int idLista = listaElement->IntAttribute("id");
+        cout <<" --- lista trovata" << endl;
+        cout << "id Lista: " << idLista << endl;
+        string nomeLista = listaElement->Attribute("nome");
+        cout << "nome: " << nomeLista << endl;
+
+        XMLElement * firstCandidatoElement  = listaElement->FirstChildElement("candidato");
+        XMLElement * lastCandidatoElement = listaElement->LastChildElement("candidato");
+
+        XMLElement * candidatoElement = firstCandidatoElement;
+        //ottengo tutti i candidati della lista
+        bool lastCandidato = false;
+        do{
+            int id = candidatoElement->IntAttribute("id");
+            cout << "trovato candidato, id: " << id << endl;
+
+            XMLElement * matricolaElement = candidatoElement->FirstChildElement("matricola");
+            XMLNode * matricolaInnerNode = matricolaElement->FirstChild();
+            string matricola;
+            if(matricolaInnerNode!=nullptr){
+                matricola = matricolaInnerNode->ToText()->Value();
+            }
+            cout << matricola << endl;
+
+            XMLElement *nomeElement = matricolaElement->NextSiblingElement("nome");
+            XMLNode * nomeInnerNode = nomeElement->FirstChild();
+            string nome;
+            if(nomeInnerNode!=nullptr){
+                nome = nomeInnerNode->ToText()->Value();
+            }
+            cout << nome << endl;
+
+            XMLElement *cognomeElement = nomeElement->NextSiblingElement("cognome");
+            XMLNode * cognomeInnerNode = cognomeElement->FirstChild();
+            string cognome;
+            if(cognomeInnerNode!=nullptr){
+                cognome = cognomeInnerNode->ToText()->Value();
+            }
+            cout << cognome << endl;
+
+            XMLElement *luogoNascitaElement = cognomeElement->NextSiblingElement("luogoNascita");
+            XMLNode * luogoNascitaInnerNode = luogoNascitaElement->FirstChild();
+            string luogoNascita;
+            if(luogoNascitaInnerNode!=nullptr){
+                luogoNascita = luogoNascitaInnerNode->ToText()->Value();
+            }
+            cout << luogoNascita << endl;
+
+            XMLElement *dataNascitaElement = luogoNascitaElement->NextSiblingElement("dataNascita");
+            XMLNode * dataNascitaInnerNode = dataNascitaElement->FirstChild();
+            string dataNascita;
+            if(dataNascitaInnerNode!=nullptr){
+                dataNascita = dataNascitaInnerNode->ToText()->Value();
+            }
+            cout << dataNascita << endl;
+
+            cout << "Estratti i dati del candidato id: " << id << endl;
+            sv.addCandidato(matricola,nome,cognome,nomeLista,dataNascita,luogoNascita);
+
+            //accesso al successivo candidato
+            if(candidatoElement == lastCandidatoElement){
+                lastCandidato = true;
+            }else {
+                candidatoElement = candidatoElement->NextSiblingElement("candidato");
+                cout << "ottengo il puntatore al successivo candidato" << endl;
+            }
+        }while(!lastCandidato);
+
+        cout << "non ci sono altri candidati nella lista: " << nomeLista << endl;
+
+
+        if(listaElement == lastListaElement){
+            lastLista = true;
+        }
+        else{
+            //accediamo alla successiva lista nella scheda di voto
+            listaElement = listaElement->NextSiblingElement("lista");
+            cout << "ottengo il puntatore alla successiva lista" << endl;
+        }
+    }while(!lastLista);
+    cout << "non ci sono altre liste" << endl;
+
+    schedeVoto.push_back(sv);
+}
+
+string PostazioneVoto::getSessionKey_PV_Urna() const
+{
+    return sessionKey_PV_Urna;
+}
+
+void PostazioneVoto::setSessionKey_PV_Urna(const string &value)
+{
+    sessionKey_PV_Urna = value;
 }

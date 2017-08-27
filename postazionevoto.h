@@ -78,6 +78,9 @@ public:
     void setIdProceduraVoto(uint idProcedura);
     string calcolaMAC(string key, string plainText);
     void addScheda(string scheda);
+    string getSessionKey_PV_Urna() const;
+    void setSessionKey_PV_Urna(const string &value);
+
 private:
 
     //dati membro
@@ -122,7 +125,6 @@ protected:
     unsigned int getHTAssociato();
 
     unsigned int getIdPostazioneVoto();
-    unsigned int getPublicKeyPV(); //servizio per l'urna, inutile se le SmartCard delle postazioni voto sono prememorizzate nell'urna, se la PV invia l'id relativo alla SC che è inserita
     void compilaScheda(); //estrae i dati dalla schermata di compilazione di una singola scheda e inserisce un elemento nel vettore delle schedeCompilate
 
 

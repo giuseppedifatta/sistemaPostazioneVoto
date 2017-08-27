@@ -582,10 +582,14 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
                         string scheda = fileScheda;
                         pvChiamante->addScheda(scheda);
                     }
+                    else{
+                        cerr << "scheda " << i+1 << " non ricevuta" << endl;
+                    }
                 }
                 else{
-                    cerr << "scheda " << i+1 << " non ricevuta" << endl;
+                    cerr << "errore nella ricezione della lunghezza della scheda da ricevere" << endl;
                 }
+            }
         }
         else{
             cerr << "ClientPV: schede di voto non ricevute" << endl;
