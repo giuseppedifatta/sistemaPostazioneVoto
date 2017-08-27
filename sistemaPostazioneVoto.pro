@@ -16,12 +16,18 @@ SOURCES += main.cpp\
         mainwindowpv.cpp \
     postazionevoto.cpp \
     sslclient.cpp \
-    sslserver.cpp
+    sslserver.cpp \
+    schedavoto.cpp \
+    candidato.cpp \
+    listaelettorale.cpp
 
 HEADERS  += mainwindowpv.h \
     postazionevoto.h \
     sslclient.h \
-    sslserver.h
+    sslserver.h \
+    schedavoto.h \
+    candidato.h \
+    listaelettorale.h
 
 FORMS    += mainwindowpv.ui
 

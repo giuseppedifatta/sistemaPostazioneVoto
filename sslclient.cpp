@@ -498,7 +498,7 @@ void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
 
 bool SSLClient::attivaPostazioneVoto(string sessionKey)
 {
-    bool res = false;
+    bool attivata = false;
     //richiesta servizio
     int serviceCod = serviziUrna::attivazionePV;
     stringstream ssCod;
@@ -518,12 +518,20 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     if (bytes > 0) {
                 cod_idProcedura[bytes] = 0;
                 idProcedura = atoi(cod_idProcedura);
-                pvChiamante->setIdProceduraVoto(idProcedura);
+                //pvChiamante->setIdProceduraVoto(idProcedura);
     }
     else{
        cerr << "ClientPV: non sono riuscito a ricevere l'idProcedura" << endl;
     }
 
+    //SE L'ID PROCEDURA RICEVUTO È 0, NON C'È UNA PROCEDURA IN CORSO, ABORTISCO L'ATTIVAZIONE
+    if(idProcedura == 0){
+        return attivata; //valore corrente "false"
+
+    }
+    else{
+        pvChiamante->setIdProceduraVoto(idProcedura);
+    }
 
     string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura)); //implementare
 
@@ -540,7 +548,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     // 0 -> success
     // 1 -> error
 
-    char buffer[8];
+    char buffer[16];
     memset(buffer, '\0', sizeof(buffer));
     bytes = SSL_read(ssl,buffer,sizeof(buffer));
     if(bytes > 0){
@@ -548,12 +556,43 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
         int result = atoi(buffer);
 
         if (result == 0){
-            res = true;
+            attivata = true;
         }
 
     }
 
-    return res;
+    //se l'attivazione ha avuto successo ricevo le schede dall'urna
+    if(attivata){
+        memset(buffer, '\0', sizeof(buffer));
+        bytes = SSL_read(ssl,buffer,sizeof(buffer));
+        if(bytes > 0){
+            buffer[bytes] = 0;
+            uint numSchede = atoi(buffer);
+            for(uint i = 0; i < numSchede; i++){
+                memset(buffer, '\0', sizeof(buffer));
+                bytes = SSL_read(ssl,buffer,sizeof(buffer));
+                if(bytes > 0){
+                    buffer[bytes] = 0;
+                    uint length = atoi(buffer);
+                    char fileScheda[length];
+                    memset(fileScheda, '\0', sizeof(fileScheda));
+                    bytes = SSL_read(ssl,fileScheda,sizeof(fileScheda));
+                    if(bytes > 0){
+                        fileScheda[bytes] = 0;
+                        string scheda = fileScheda;
+                        pvChiamante->addScheda(scheda);
+                    }
+                }
+                else{
+                    cerr << "scheda " << i+1 << " non ricevuta" << endl;
+                }
+        }
+        else{
+            cerr << "ClientPV: schede di voto non ricevute" << endl;
+        }
+    }
+
+    return attivata;
 }
 
 void SSLClient::inviaSchedeCompilate()

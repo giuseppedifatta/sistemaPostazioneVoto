@@ -15,6 +15,7 @@
 #include "sslclient.h"
 #include "sslserver.h"
 #include "mainwindowpv.h"
+#include "schedavoto.h"
 
 #include <QtCore>
 #include <QThread>
@@ -76,23 +77,22 @@ public:
     void backToPostazioneAttiva();
     void setIdProceduraVoto(uint idProcedura);
     string calcolaMAC(string key, string plainText);
-
+    void addScheda(string scheda);
 private:
 
     //dati membro
-    //MainWindowPV *mainWindow;
-    unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
-    unsigned int sessionKey_PV_Urna; //chiave privata presente sulla smart card
-    unsigned int publicKeyPV; //prelevato dalla SC all'atto dell'inizializzazione
-    unsigned int publicKeyRP; //ottenuto dall'Urna
 
-    unsigned short int idProceduraVoto;
-    tinyxml2::XMLDocument * pSchedeVoto;
+    unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
+    string sessionKey_PV_Urna; //chiave di sessione handwritten al momento dell'attivazione della postazione di voto
+    unsigned int publicKeyRP; //ottenuta dall'Urna, chiave per cifrare chiave simmetrica e IV per la cifratura dei campi delle schede compilate
+
+    unsigned int idProceduraVoto;
+    vector <SchedaVoto> schedeVoto;
 
     //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
-    unsigned int symKeyAES; //chiave per la cifratura simmetrica
-    unsigned int ivCBC; //valore iniziale per CBC
+    unsigned int symKeyAES; //chiave per la cifratura simmetrica, non di tipo uint
+    unsigned int ivCBC; //valore iniziale per CBC, non di tipo uint
 
     statiPV statoPV;
 
