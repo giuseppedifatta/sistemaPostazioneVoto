@@ -32,6 +32,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     //TODO calcolare dall'indirizzo IP
     idPostazioneVoto = 1;
 
+    postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
 
     //connessione all'urna e richiesta di questi dati
 
@@ -221,7 +222,7 @@ void PostazioneVoto::stopServerPV(){
 void PostazioneVoto::validatePassKey(QString pass)
 {
     //contatto l'urna per validare la passward
-    const char * ipUrna = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+    const char * ipUrna = "192.168.192.162";
 
     SSLClient * pv_client = new SSLClient(this);
 
@@ -236,8 +237,7 @@ void PostazioneVoto::validatePassKey(QString pass)
         }
     }
 
-
-
+    delete pv_client;
 }
 
 
@@ -259,7 +259,6 @@ void PostazioneVoto::function_thread_sendStatoToSeggio(unsigned int statoPV){
     cout << "Dentro il thread" << endl;
     this->mutex_stdout.unlock();
 
-    const char * postazioneSeggio = "192.168.192.130"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
 
     SSLClient * pv_client = new SSLClient(this);
 
