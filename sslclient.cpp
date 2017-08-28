@@ -568,6 +568,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
         if(bytes > 0){
             buffer[bytes] = 0;
             uint numSchede = atoi(buffer);
+            cout << numSchede << endl;
             for(uint i = 0; i < numSchede; i++){
                 memset(buffer, '\0', sizeof(buffer));
                 bytes = SSL_read(ssl,buffer,sizeof(buffer));
@@ -580,6 +581,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
                     if(bytes > 0){
                         fileScheda[bytes] = 0;
                         string scheda = fileScheda;
+                        cout << scheda << endl;
                         pvChiamante->addScheda(scheda);
                     }
                     else{

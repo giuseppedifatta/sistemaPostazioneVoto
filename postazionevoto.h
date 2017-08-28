@@ -82,7 +82,7 @@ public:
     void setSessionKey_PV_Urna(const string &value);
 
 private:
-
+    const char * postazioneSeggio;
     //dati membro
 
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
