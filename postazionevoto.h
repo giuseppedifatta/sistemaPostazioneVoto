@@ -16,6 +16,7 @@
 #include "sslserver.h"
 #include "mainwindowpv.h"
 #include "schedavoto.h"
+#include "schedacompilata.h"
 
 #include <QtCore>
 #include <QThread>
@@ -34,11 +35,13 @@ class PostazioneVoto : public QThread
 signals:
     void stateChange(unsigned int);
     void wrongPassKey();
+    void giveSchedeToView(vector <SchedaVoto> schedeDaMostrare);
 
 public slots:
     void validatePassKey(QString pass);
     void stopServerPV();
-
+    void selectSchedeDaMostrare();
+    void inviaSchede(vector <SchedaCompilata> schede);
 
 public:
     explicit PostazioneVoto(QObject *parent = 0);
@@ -59,15 +62,9 @@ public:
     void setStatoPV(statiPV nuovoStato);
     unsigned int getStatoPV();
 
-    //metodi per la visualizzazione delle schermate
-    void mostraSchede(XMLDocument *pschedeVoto);
-
-
     //comunica con l'otp server provider per fornire il codice inserito, restituisce true, se il codice inserito è esatto
     bool enablingPV();
     void runServicesToSeggio();
-
-
 
     mutex mutex_stdout;
     QMutex mutex_run_server;
@@ -91,6 +88,7 @@ private:
 
     unsigned int idProceduraVoto;
     vector <SchedaVoto> schedeVoto;
+    unsigned int tipoElettore;//in funziona di questo valore vanno selezionate le schede da mostrare per la compilazione
 
     //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
@@ -125,7 +123,6 @@ protected:
     unsigned int getHTAssociato();
 
     unsigned int getIdPostazioneVoto();
-    void compilaScheda(); //estrae i dati dalla schermata di compilazione di una singola scheda e inserisce un elemento nel vettore delle schedeCompilate
 
 
 

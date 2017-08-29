@@ -141,9 +141,6 @@ unsigned int PostazioneVoto::getIdPostazioneVoto() {
 }
 
 
-void PostazioneVoto::compilaScheda() {
-    //TODO
-} //estrae i dati dalla schermata di compilazione di una singola scheda e inserisce un elemento nel vettore delle schedeCompilate
 
 void PostazioneVoto::runServicesToSeggio() {
 
@@ -219,10 +216,29 @@ void PostazioneVoto::stopServerPV(){
 
 }
 
+void PostazioneVoto::selectSchedeDaMostrare()
+{
+    vector <SchedaVoto> schedeDaMostrare;
+
+    for (unsigned int i = 0; i < schedeVoto.size(); i++){
+        //TODO seleziona la scheda se l'elettore corrente assegnato alla postazione può votare per questa scheda
+        schedeDaMostrare.push_back(schedeVoto.at(i));
+    }
+
+    emit giveSchedeToView(schedeDaMostrare);
+}
+
+void PostazioneVoto::inviaSchede(vector<SchedaCompilata> schede)
+{
+    //TODO con i dati della schede compilate, creare un vettore di file xml
+    //di cui cifrare i campi contenenti i candidati votati e
+    //quindi inviare uno per volta i file all'urna
+}
+
 void PostazioneVoto::validatePassKey(QString pass)
 {
     //contatto l'urna per validare la passward
-    const char * ipUrna = "192.168.192.162";
+    const char * ipUrna = "192.168.19.129";
 
     SSLClient * pv_client = new SSLClient(this);
 

@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     sslserver.cpp \
     schedavoto.cpp \
     candidato.cpp \
-    listaelettorale.cpp
+    listaelettorale.cpp \
+    schedacompilata.cpp
 
 HEADERS  += mainwindowpv.h \
     postazionevoto.h \
@@ -27,7 +28,8 @@ HEADERS  += mainwindowpv.h \
     sslserver.h \
     schedavoto.h \
     candidato.h \
-    listaelettorale.h
+    listaelettorale.h \
+    schedacompilata.h
 
 FORMS    += mainwindowpv.ui
 
