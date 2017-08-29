@@ -85,7 +85,7 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
 
 }
 void MainWindowPV::mostraScheda(){
-
+    addingElementToListWidget = true;
     //aggiorniamo testo da mostrare sul bottone per la successiva scheda o l'invio dei voti
     if(indiceSchedaDaMostrare < (schedeVotoDaMostrare.size() - 1)){
         ui->pushButton_nextSend->setText("Prossima Scheda");
@@ -159,6 +159,7 @@ void MainWindowPV::mostraScheda(){
     //visualizzazione scheda completata, azzeriamo il valore numChecked, perché l'aggiunta di elementi nel list widget viene considerata una variazione degli item
     //purtroppo non riesco a catturare l'evento di check sugli item diversamente
     numChecked = 0;
+    addingElementToListWidget = false;
     ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
 
 }
@@ -236,6 +237,11 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
 
 void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
 {
+    if(addingElementToListWidget){
+        //la listWidget è in fase di creazione, evitare il rilevamento dell'evento di modifica degli item
+        //poichè causa il trigger dell'evento di unchecked e diminuisce il valore di numChecked quando questa modifica non è desiderata
+        return;
+    }
     QVariant var = item->data(Qt::UserRole);
     string matricola = var.toString().toStdString();
     cout << "Item's matricola: " << matricola << endl;

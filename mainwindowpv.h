@@ -26,6 +26,7 @@ private:
     vector <SchedaCompilata> schedeCompilate;
     uint numChecked;
     uint numPreferenzeMax;
+    bool addingElementToListWidget;
 
     enum InterfaccePV{
         attivazione,
