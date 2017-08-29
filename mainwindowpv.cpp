@@ -132,6 +132,7 @@ void MainWindowPV::mostraScheda(){
             QString infoLista = "Lista " + QString::number(listaIndex+1) + ": " + QString::fromStdString(nomeLista);
             QListWidgetItem * item = new QListWidgetItem(infoLista,ui->listWidget_scheda);
             item->setFont(serifFont);
+            item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
         }
         for (uint i = 0; i < candidatiLista.size(); i++ ){
 
@@ -140,11 +141,14 @@ void MainWindowPV::mostraScheda(){
             string matricola = candidatiLista.at(i).getMatricola();
 
 
-            QListWidgetItem* item = new QListWidgetItem(nominativo,ui->listWidget_scheda);
+            QListWidgetItem* item = new QListWidgetItem(nominativo);
             item->setFlags(item->flags() | Qt::ItemIsUserCheckable); // set checkable flag
+            //item->setFlags(item->flags() & !Qt::ItemIsEditable);
             item->setCheckState(Qt::Unchecked);
             QVariant matrVariant(QString::fromStdString(matricola));
             item->setData(Qt::UserRole,matrVariant);
+            ui->listWidget_scheda->addItem(item);
+
 
             string luogo = candidatiLista.at(i).getLuogoNascita();
             string data = candidatiLista.at(i).getDataNascita();
@@ -219,18 +223,50 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
     //TODO estrai dati dall'interfaccia di compilazione scheda,
     //crea una scheda compilata e aggiungila al vettore delle
     //schede compilate da inviare all'urna
+    uint codScheda = ui->label_numeroSchedaValue->text().toUInt();
+    sc.setId(codScheda);
+    uint idProcedura = ui->label_procedura_value->text().toUInt();
+    sc.setIdProceduraVoto(idProcedura);
+    uint tipologiaElezione = ui->label_tipologiaElezioneValue->text().toUInt();
+    sc.setTipoElezione(tipologiaElezione);
+    vector <string> matricole;
+    for(int i = 0; i < ui->listWidget_scheda ->count(); ++i)
+    {
+        QListWidgetItem* item = ui->listWidget_scheda->item(i);
+        if(item->checkState()==Qt::CheckState::Checked){
+            QVariant var = item->data(Qt::UserRole);
+            matricole.push_back(var.toString().toStdString());
+        }
+    }
+    uint indiceSchedaMostrata = indiceSchedaDaMostrare;
+    SchedaVoto sv = schedeVotoDaMostrare.at(indiceSchedaMostrata);
+    vector <Candidato> candidati = sv.getCandidati();
+    vector <Candidato> preferenzeCandidati;
+    for (uint i = 0; i < matricole.size(); i++){
+        for(uint j = 0; j < candidati.size();j++){
+            if(matricole.at(i) == candidati.at(j).getMatricola()){
+                preferenzeCandidati.push_back(candidati.at(j));
+                break;
+            }
+        }
+    }
+    for (uint i = 0; i < preferenzeCandidati.size(); i++){
+        sc.addCandidato(preferenzeCandidati.at(i));
+    }
 
     schedeCompilate.push_back(sc);
 
     //verifica se bisogna mostra la scheda successiva, o se
     //quella mostrata era l'ultima e bisogna procedere all'invio
     //delle schede compilate
-    uint indiceSchedaMostrata = indiceSchedaDaMostrare;
+
     if(indiceSchedaMostrata < (schedeVotoDaMostrare.size()-1)){
         indiceSchedaDaMostrare++;
         mostraScheda();
     }
     else{
+        cout << "View: sto emettondo il segnale per il thread PV, il quale dovrà occuparsi dell'invio delle schede"  << endl;
+
         emit inviaSchedeCompilate(schedeCompilate);
     }
 }
