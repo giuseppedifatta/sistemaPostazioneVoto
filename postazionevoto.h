@@ -41,7 +41,7 @@ public slots:
     void validatePassKey(QString pass);
     void stopServerPV();
     void selectSchedeDaMostrare();
-    void inviaSchede(vector <SchedaCompilata> schede);
+    void inviaVotiToUrna(vector <SchedaCompilata> schede);
 
 public:
     explicit PostazioneVoto(QObject *parent = 0);

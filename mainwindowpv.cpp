@@ -23,7 +23,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(pv, SIGNAL(wrongPassKey()),this, SLOT(messageErrorPassword()));
     QObject::connect(this,SIGNAL(needSchede()),pv,SLOT(selectSchedeDaMostrare()));
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
-
+    QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna(vector<SchedaCompilata>)));
     //avvio il thread del model
     pv->start();
 

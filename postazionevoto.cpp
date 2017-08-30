@@ -228,11 +228,52 @@ void PostazioneVoto::selectSchedeDaMostrare()
     emit giveSchedeToView(schedeDaMostrare);
 }
 
-void PostazioneVoto::inviaSchede(vector<SchedaCompilata> schede)
+void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 {
     //TODO con i dati della schede compilate, creare un vettore di file xml
     //di cui cifrare i campi contenenti i candidati votati e
     //quindi inviare uno per volta i file all'urna
+
+    for (uint i = 0; i < schede.size(); i++){
+        bool schedaStored = false;
+        //creazione file xml della scheda compilata
+
+
+        //generazione chiave simmetrica e iv
+
+
+        //cifratura campi scheda voto con chiave simmetrica
+
+
+        //cifratura chiave simmetrica e iv con chiave pubblica di RP
+
+
+
+        while (!schedaStored){
+            //generazione nonce
+
+
+
+            //generazione mac
+            //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
+            //chiave per HAMC: chiave di sessione tra pv e urna
+
+
+            //invio scheda votata all'urna
+
+
+
+            //se il mac ricevuto dall'urna è univoco rispetto al db, riceviamo il valore di successo dall'urna e settiamo schedaStored a true
+
+
+            schedaStored = true;
+        }
+    }
+
+
+    //tutte le schede votate sono state recapitate correttamente nell'urna
+    //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
+
 }
 
 void PostazioneVoto::validatePassKey(QString pass)

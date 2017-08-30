@@ -14,7 +14,48 @@
    <string>MainWindowPV</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(49, 149, 255);</string>
+   <string notr="true">QMainWindow {
+background-color: rgb(49, 149, 255);
+}
+
+.QPushButton {
+background-color:rgb(146, 134, 134);
+font-size: 22px bold sans serif;
+text-align:center;
+vertical-align:middle;
+min-height:60px;
+color:black;
+}
+.QPushButton:disabled{
+background-color: rgb(49, 149, 255);
+font-size: 22px bold sans serif;
+text-align:center;
+vertical-align:middle;
+min-height:60px;
+color: rgb(108, 108, 108);
+
+}
+
+.QLabel {
+color: white;
+font-size: 20px bold sans serif;
+}
+
+.QLineEdit{
+font:18px bold sans serif;
+background-color: white;
+}
+
+.QComboBox{
+font:18px bold sans serif;
+}
+
+
+
+.QMessageBox{
+background-color: rgb(49, 149, 255);
+}
+</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <property name="styleSheet">

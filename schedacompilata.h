@@ -9,6 +9,8 @@ private:
 public:
     SchedaCompilata();
     void addCandidato(Candidato c);
+    uint getNonce() const;
+    void setNonce(const uint &value);
 };
 
 #endif // SCHEDACOMPILATA_H
