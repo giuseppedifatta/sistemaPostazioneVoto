@@ -223,6 +223,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
 
         //TODO cifratura chiave simmetrica e iv con chiave pubblica di RP
+        cout << "cifro Key e IV " << endl;
         string encryptedKey = encryptRSA_withPublickKeyRP(key);
         string encryptedIV = encryptRSA_withPublickKeyRP(iv);
 
@@ -235,10 +236,12 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             uint nonce = rng.GenerateBit();
 
             //cifratura nonce
-            encryptStdString(std::to_string(nonce),key,iv);
+            string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
 
-            //sostituzione nonce al file xml
+            //sostituzione nonce nel file xml
+            XMLNode *rootNode = xmlDoc.FirstChild();
 
+            rootNode->FirstChildElement("nonce")->SetText(encryptedNonce.c_str());
 
 
             //print file xml della scheda to string
@@ -348,7 +351,7 @@ string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
     assert(
             CryptoPP::AES::DEFAULT_KEYLENGTH
                     <= encryptor.FixedMaxPlaintextLength());
-    cout << "suca" << endl;
+
     // Create cipher key space
     size_t ecl = encryptor.CiphertextLength(value.size());
     assert(0 != ecl);
