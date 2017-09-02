@@ -17,12 +17,26 @@
 #include "mainwindowpv.h"
 #include "schedavoto.h"
 #include "schedacompilata.h"
+#include <iostream>
+#include "cryptopp/osrng.h"
+#include "cryptopp/cryptlib.h"
+#include "cryptopp/hmac.h"
+#include "cryptopp/sha.h"
+#include "cryptopp/hex.h"
+#include "cryptopp/filters.h"
+#include "cryptopp/secblock.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/modes.h"
+#include <cryptopp/rsa.h>
+
+
 
 #include <QtCore>
 #include <QThread>
 
 using namespace std;
 using namespace tinyxml2;
+using namespace CryptoPP;
 
 class SSLClient;
 class SSLServer;
@@ -36,6 +50,7 @@ signals:
     void stateChange(unsigned int);
     void wrongPassKey();
     void giveSchedeToView(vector <SchedaVoto> schedeDaMostrare);
+
 
 public slots:
     void validatePassKey(QString pass);
@@ -78,13 +93,17 @@ public:
     string getSessionKey_PV_Urna() const;
     void setSessionKey_PV_Urna(const string &value);
 
+    //string getPublicKeyRP() const;
+    void setRSAPublicKeyRP(const string &publicKeyEncoded);
+
 private:
     const char * postazioneSeggio;
     //dati membro
 
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
     string sessionKey_PV_Urna; //chiave di sessione handwritten al momento dell'attivazione della postazione di voto
-    unsigned int publicKeyRP; //ottenuta dall'Urna, chiave per cifrare chiave simmetrica e IV per la cifratura dei campi delle schede compilate
+    //string publicKeyRP;
+    CryptoPP::RSA::PublicKey rsaPublicKeyRP;//ottenuta dall'Urna, chiave RSA per cifrare chiavi simmetriche in modo asimmetrico
 
     unsigned int idProceduraVoto;
     vector <SchedaVoto> schedeVoto;
@@ -107,6 +126,9 @@ private:
     void function_thread_sendStatoToSeggio(unsigned int statoPV);
 
     bool runServerPV;
+    void creaSchedaCompilataXML_AES(XMLDocument *xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv);
+    string encryptStdString(string plaintext, SecByteBlock key, SecByteBlock iv);
+    string encryptRSA_withPublickKeyRP(SecByteBlock value);
 protected:
 
     //monitoraggio postazione, servizi per il seggio
@@ -128,7 +150,6 @@ protected:
 
     //metodi per la cifratura del voto
 
-    bool inviaSchedeToUrnaVirtuale(); //passare le schedecompilate come parametro
     void pubEncrypt_publicKeyRP(unsigned int symKey, unsigned int iv);
 
     //calcola il digest sui dati in ingresso, lo firma(cio� lo cifra con la chiave privata), restituisce il digest firmato

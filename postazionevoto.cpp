@@ -6,21 +6,6 @@
  */
 
 #include "postazionevoto.h"
-#include <iostream>
-#include "cryptopp/osrng.h"
-#include "cryptopp/cryptlib.h"
-#include "cryptopp/hmac.h"
-#include "cryptopp/sha.h"
-#include "cryptopp/hex.h"
-#include "cryptopp/filters.h"
-#include "cryptopp/secblock.h"
-
-
-using namespace CryptoPP;
-
-using namespace std;
-
-
 
 PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
@@ -33,10 +18,6 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     idPostazioneVoto = 1;
 
     postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
-
-    //connessione all'urna e richiesta di questi dati
-
-    publicKeyRP = 0;
 
     //init client
     //this->pv_client = new SSLClient(this);
@@ -66,6 +47,7 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
 
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
     emit stateChange(nuovoStato);
+
     this->mutex_stdout.lock();
     cout << "PV: segnalato alla view che lo stato della postazione è cambiato"  << endl;
     this->mutex_stdout.unlock();
@@ -140,27 +122,14 @@ unsigned int PostazioneVoto::getIdPostazioneVoto() {
     return this->idPostazioneVoto;
 }
 
-
-
 void PostazioneVoto::runServicesToSeggio() {
 
     server_thread = std::thread(&PostazioneVoto::runServerListenSeggio, this);
 
 }
 
-//metodi per la cifratura del voto
-
-bool PostazioneVoto::inviaSchedeToUrnaVirtuale() {
-    //TODO creazione connessione SSL con l'urna e invio dei dati di voto cifrati e firmati
-
-    return true;
-}
-
-//void PostazioneVoto::mostraSchede(tinyxml2::XMLDocument *pschedeVoto) {
-//    //TODO
-//}
-
 bool PostazioneVoto::enablingPV() {
+    setStatoPV(statiPV::votazione_in_corso);
     return true;
 }
 
@@ -208,7 +177,6 @@ void PostazioneVoto::stopServerPV(){
     this->mutex_stdout.lock();
     cout << "PV: il ServerPV sta per essere fermato" << endl;
     this->mutex_stdout.unlock();
-
     //mi connetto al server locale per sbloccare l'ascolto e portare alla terminazione della funzione eseguita dal thread che funge da serve in ascolto
     SSLClient * pv_client = new SSLClient(this);
     pv_client->stopLocalServer();
@@ -236,23 +204,48 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
     for (uint i = 0; i < schede.size(); i++){
         bool schedaStored = false;
-        //creazione file xml della scheda compilata
-
-
         //generazione chiave simmetrica e iv
+        AutoSeededRandomPool rng;
+
+        // chiave simmetrica
+        SecByteBlock key( AES::MAX_KEYLENGTH );
+        rng.GenerateBlock( key, key.size() );
 
 
-        //cifratura campi scheda voto con chiave simmetrica
+        //initial value
+        SecByteBlock iv(AES::MAX_KEYLENGTH);
+        rng.GenerateBlock( iv, iv.size() );
+
+        //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
+        XMLDocument xmlDoc;
+        creaSchedaCompilataXML_AES(&xmlDoc,schede.at(i),key,iv);
 
 
-        //cifratura chiave simmetrica e iv con chiave pubblica di RP
 
+        //TODO cifratura chiave simmetrica e iv con chiave pubblica di RP
+        string encryptedKey = encryptRSA_withPublickKeyRP(key);
+        string encryptedIV = encryptRSA_withPublickKeyRP(iv);
+
+        //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
+        //        string encryptedIV = std::string(reinterpret_cast<const char*>(iv.data()), iv.size());
 
 
         while (!schedaStored){
             //generazione nonce
+            uint nonce = rng.GenerateBit();
+
+            //cifratura nonce
+            encryptStdString(std::to_string(nonce),key,iv);
+
+            //sostituzione nonce al file xml
 
 
+
+            //print file xml della scheda to string
+            XMLPrinter printer;
+            xmlDoc.Print( &printer );
+            string schedaStr = printer.CStr();
+            cout << schedaStr << endl;
 
             //generazione mac
             //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
@@ -273,7 +266,102 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
     //tutte le schede votate sono state recapitate correttamente nell'urna
     //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
+    setStatoPV(statiPV::votazione_completata);
+}
 
+void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv){
+    // estrazione dati dall'oggetto di tipo scheda voto, e generazione del file XML, con conseguente memorizzazione su database
+
+
+    XMLNode * pRoot = xmlDoc->NewElement("SchedaCompilata");
+    xmlDoc->InsertFirstChild(pRoot);
+    XMLElement * pElement;
+
+
+    uint idScheda = scheda.getIdScheda();
+    pElement = xmlDoc->NewElement("idScheda");
+    pElement->SetText(idScheda);
+    pRoot->InsertEndChild(pElement);
+
+    uint idProceduraVoto = scheda.getIdProcedura();
+    pElement = xmlDoc->NewElement("idProcedura");
+    pElement->SetText(idProceduraVoto);
+    pRoot->InsertEndChild(pElement);
+
+    uint tipoElezione = scheda.getTipologiaElezione();
+    pElement = xmlDoc->NewElement("tipologiaElezione");
+    pElement->SetText(tipoElezione);
+    pRoot->InsertEndChild(pElement);
+
+    uint numPref = scheda.getNumPreferenze();
+    pElement = xmlDoc->NewElement("numeroPreferenze");
+    pElement->SetText(numPref);
+    pRoot->InsertEndChild(pElement);
+
+    pElement = xmlDoc->NewElement("nonce");
+    pRoot->InsertEndChild(pElement);
+
+    vector <string> preferenzeMatricole = scheda.getMatricolePreferenze();
+    XMLNode * pPreferenze = xmlDoc->NewElement("preferenze");
+    pRoot->InsertEndChild(pPreferenze);
+    //    unsigned int idCandidato = 0;
+    //    unsigned int idLista = 0;
+    for (uint indexMatricole = 0; indexMatricole < preferenzeMatricole.size(); indexMatricole++){
+
+        XMLElement * pMatr = xmlDoc->NewElement("matricolaCandidato");
+        string matricola = preferenzeMatricole.at(indexMatricole);
+        //cifriamo il campo della matricola con chiave simmetrica e AES
+        string matricolaEncrypted = encryptStdString(matricola,key,iv);
+        pMatr->SetText(matricolaEncrypted.c_str());
+        pPreferenze->InsertEndChild(pMatr);
+    }
+}
+
+string PostazioneVoto::encryptStdString(string plaintext, SecByteBlock key, SecByteBlock iv) {
+
+    string ciphertext;
+    //settaggio parametri di cifratura
+    //impostazione della chiave che sarà utilizzata da AES
+    CryptoPP::AES::Encryption aesEncryption(key,AES::MAX_KEYLENGTH);
+
+    //impostazione dell'iv per il cifrario a blocchi
+    CryptoPP::CBC_Mode_ExternalCipher::Encryption cbcEncryption(aesEncryption, iv);
+
+    //impostazione variabile di destinazione del testo cifrato
+    StreamTransformationFilter stfEncryptor(cbcEncryption,new StringSink(ciphertext));
+    //cifratura del plaintext
+    stfEncryptor.Put(reinterpret_cast<const unsigned char*>(plaintext.c_str()),plaintext.length() + 1);
+    stfEncryptor.MessageEnd();
+
+
+    return ciphertext;
+}
+
+string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
+{
+    // Encrypt
+    RSAES_OAEP_SHA_Encryptor encryptor(rsaPublicKeyRP);
+
+    //Encrypt key
+    // Now that there is a concrete object, we can validate
+    assert(0 != encryptor.FixedMaxPlaintextLength());
+    assert(
+            CryptoPP::AES::DEFAULT_KEYLENGTH
+                    <= encryptor.FixedMaxPlaintextLength());
+    cout << "suca" << endl;
+    // Create cipher key space
+    size_t ecl = encryptor.CiphertextLength(value.size());
+    assert(0 != ecl);
+
+    SecByteBlock cipherKey(ecl);
+
+    // Paydirt
+    AutoSeededRandomPool rng;
+    encryptor.Encrypt(rng, value, value.size(), cipherKey);
+
+    string encryptedValue = std::string(reinterpret_cast<const char*>(cipherKey.data()), cipherKey.size());
+
+    return encryptedValue;
 }
 
 void PostazioneVoto::validatePassKey(QString pass)
@@ -355,9 +443,7 @@ string PostazioneVoto::calcolaMAC(string key, string plainText){
     string decodedKey;
 
     StringSource ss(encodedKey,
-                    new HexDecoder(
-                        new StringSink(decodedKey)
-                        ) // HexDecoder
+                    new HexDecoder(new StringSink(decodedKey)) // HexDecoder
                     ); // StringSource
 
     string plain = plainText;//"HMAC Test";
@@ -376,7 +462,7 @@ string PostazioneVoto::calcolaMAC(string key, string plainText){
     //generazione dell'hmac
     try
     {
-        //dichiarazione del filtro
+        //dichiarazione del filtro con impostazione della chiave
         SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
         CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
 
@@ -543,4 +629,24 @@ string PostazioneVoto::getSessionKey_PV_Urna() const
 void PostazioneVoto::setSessionKey_PV_Urna(const string &value)
 {
     sessionKey_PV_Urna = value;
+}
+
+//string PostazioneVoto::getPublicKeyRP() const
+//{
+//    return publicKeyRP;
+//}
+
+void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
+{
+    string decodedPublicKey;
+
+    StringSource ssDecoded(publicKeyEncoded, true /*pump all*/,
+                           new HexDecoder(
+                               new StringSink(decodedPublicKey)
+                               ) // HexDecoder
+                           ); // StringSource
+    cout << "publicKey decodedificata da esadecimale: " << decodedPublicKey << endl;
+
+    StringSource ss(decodedPublicKey,true /*pumpAll*/);
+    rsaPublicKeyRP.Load(ss);
 }

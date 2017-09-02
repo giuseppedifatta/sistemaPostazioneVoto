@@ -24,6 +24,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(this,SIGNAL(needSchede()),pv,SLOT(selectSchedeDaMostrare()));
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna(vector<SchedaCompilata>)));
+
     //avvio il thread del model
     pv->start();
 
@@ -84,6 +85,8 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
     mostraScheda();
 
 }
+
+
 void MainWindowPV::mostraScheda(){
     addingElementToListWidget = true;
     //aggiorniamo testo da mostrare sul bottone per la successiva scheda o l'invio dei voti
@@ -218,40 +221,29 @@ void MainWindowPV::messageErrorPassword(){
 }
 
 void MainWindowPV::on_pushButton_nextSend_clicked()
-{
-    SchedaCompilata sc;
-    //TODO estrai dati dall'interfaccia di compilazione scheda,
-    //crea una scheda compilata e aggiungila al vettore delle
+{    //estrae dati dall'interfaccia di compilazione scheda,
+    //crea una scheda compilata e la aggiunge al vettore delle
     //schede compilate da inviare all'urna
+
+    SchedaCompilata sc;
+
     uint codScheda = ui->label_numeroSchedaValue->text().toUInt();
-    sc.setId(codScheda);
+    sc.setIdScheda(codScheda);
     uint idProcedura = ui->label_procedura_value->text().toUInt();
-    sc.setIdProceduraVoto(idProcedura);
+    sc.setIdProcedura(idProcedura);
     uint tipologiaElezione = ui->label_tipologiaElezioneValue->text().toUInt();
-    sc.setTipoElezione(tipologiaElezione);
-    vector <string> matricole;
+    sc.setTipologiaElezione(tipologiaElezione);
+    uint numPreferenze = ui->label_numeroPreferenzeValue->text().toUInt();
+    sc.setNumPreferenze(numPreferenze);
+
+    //aggiungo alla scheda compilata le matricole preferenza selezionate dall'elettore attivo
     for(int i = 0; i < ui->listWidget_scheda ->count(); ++i)
     {
         QListWidgetItem* item = ui->listWidget_scheda->item(i);
         if(item->checkState()==Qt::CheckState::Checked){
             QVariant var = item->data(Qt::UserRole);
-            matricole.push_back(var.toString().toStdString());
+            sc.addMatricolaPreferenza(var.toString().toStdString());
         }
-    }
-    uint indiceSchedaMostrata = indiceSchedaDaMostrare;
-    SchedaVoto sv = schedeVotoDaMostrare.at(indiceSchedaMostrata);
-    vector <Candidato> candidati = sv.getCandidati();
-    vector <Candidato> preferenzeCandidati;
-    for (uint i = 0; i < matricole.size(); i++){
-        for(uint j = 0; j < candidati.size();j++){
-            if(matricole.at(i) == candidati.at(j).getMatricola()){
-                preferenzeCandidati.push_back(candidati.at(j));
-                break;
-            }
-        }
-    }
-    for (uint i = 0; i < preferenzeCandidati.size(); i++){
-        sc.addCandidato(preferenzeCandidati.at(i));
     }
 
     schedeCompilate.push_back(sc);
@@ -259,7 +251,7 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
     //verifica se bisogna mostra la scheda successiva, o se
     //quella mostrata era l'ultima e bisogna procedere all'invio
     //delle schede compilate
-
+    uint indiceSchedaMostrata = indiceSchedaDaMostrare;
     if(indiceSchedaMostrata < (schedeVotoDaMostrare.size()-1)){
         indiceSchedaDaMostrare++;
         mostraScheda();

@@ -4,6 +4,7 @@ using namespace std;
 SchedaVoto::SchedaVoto()
 {
     modalitaAdd=SchedaVoto::modoAdd::candidato;
+    numeroLista = 0;
 
     //id della procedura a cui la scheda di voto è associata
 
@@ -31,7 +32,9 @@ void SchedaVoto::setNumPreferenze(unsigned int value)
 
 void SchedaVoto::addLista(std::string nomeLista)
 {
-    ListaElettorale l(nomeLista);
+    numeroLista++;
+    uint numLista = numeroLista;
+    ListaElettorale l(nomeLista,numLista);
     this->listeElettorali.push_back(l);
 }
 

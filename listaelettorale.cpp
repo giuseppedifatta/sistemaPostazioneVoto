@@ -5,9 +5,10 @@ ListaElettorale::ListaElettorale()
 
 }
 
-ListaElettorale::ListaElettorale(string nome)
+ListaElettorale::ListaElettorale(string nome, uint numeroLista)
 {
     this->nome = nome;
+    this->numeroLista = numeroLista;
 }
 
 string ListaElettorale::getNome() const
@@ -39,5 +40,15 @@ bool ListaElettorale::removeCandidato(string matrCandidato)
 vector<Candidato> ListaElettorale::getCandidati() const
 {
     return candidati;
+}
+
+uint ListaElettorale::getNumeroLista() const
+{
+    return numeroLista;
+}
+
+void ListaElettorale::setNumeroLista(const uint &value)
+{
+    numeroLista = value;
 }
 

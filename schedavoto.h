@@ -81,6 +81,7 @@ private:
     std::vector <Candidato> candidati;
 
     unsigned int tipoElezione;
+    unsigned int numeroLista;
 
 };
 

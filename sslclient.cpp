@@ -561,21 +561,22 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
 
     }
 
-    //se l'attivazione ha avuto successo ricevo le schede dall'urna
+    //se l'attivazione ha avuto successo ricevo le schede dall'urna e la chiave pubblica di RP
     if(attivata){
+        //schede
         memset(buffer, '\0', sizeof(buffer));
         bytes = SSL_read(ssl,buffer,sizeof(buffer));
         if(bytes > 0){
             buffer[bytes] = 0;
             uint numSchede = atoi(buffer);
-            cout << numSchede << endl;
+            cout << "Numero schede da ricevere: " << numSchede << endl;
             for(uint i = 0; i < numSchede; i++){
                 memset(buffer, '\0', sizeof(buffer));
                 bytes = SSL_read(ssl,buffer,sizeof(buffer));
                 if(bytes > 0){
                     buffer[bytes] = 0;
                     uint length = atoi(buffer);
-                    char fileScheda[length];
+                    char fileScheda[length+1];
                     memset(fileScheda, '\0', sizeof(fileScheda));
                     bytes = SSL_read(ssl,fileScheda,sizeof(fileScheda));
                     if(bytes > 0){
@@ -595,6 +596,21 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
         }
         else{
             cerr << "ClientPV: schede di voto non ricevute" << endl;
+        }
+
+        //chiave pubblica RP
+        memset(buffer, '\0', sizeof(buffer));
+        bytes = SSL_read(ssl,buffer,sizeof(buffer));
+        if(bytes > 0){
+            buffer[bytes] = 0;
+            uint lunghezzaPublicKey = atoi(buffer);
+            char bufferKey[lunghezzaPublicKey];
+            bytes = SSL_read(ssl,bufferKey,sizeof(bufferKey));
+            if(bytes > 0){
+                string publicKey = bufferKey;
+                cout << "publicKey RP: " << publicKey << endl;
+                pvChiamante->setRSAPublicKeyRP(publicKey);
+            }
         }
     }
 
