@@ -67,7 +67,7 @@ private:
 
     //verso Urna
     bool attivaPostazioneVoto(string sessionKey);
-    void inviaSchedeCompilate();
+    bool inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac);
 
     //verso OTPServerProvider
 };

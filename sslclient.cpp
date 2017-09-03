@@ -379,7 +379,7 @@ void SSLClient::verify_ServerCert() {
         pvChiamante->mutex_stdout.lock();
         BIO_printf(this->outbio, "ClientPV: Error loading CA cert or chain file\n");
         pvChiamante->mutex_stdout.unlock();
-}
+    }
     /* Initialize the ctx structure for a verification operation:
       Set the trusted cert store, the unvalidated cert, and any  *
      * potential certs that could be needed (here we set it NULL) */
@@ -399,7 +399,7 @@ void SSLClient::verify_ServerCert() {
         BIO_printf(this->outbio, "ClientPV: Verification result text: %s\n",
                    X509_verify_cert_error_string(vrfy_ctx->error));
         pvChiamante->mutex_stdout.unlock();
-}
+    }
     /* The error handling below shows how to get failure details  *
      * from the offending certificate.                            */
     if (ret == 0) {
@@ -516,12 +516,12 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     memset(cod_idProcedura, '\0', sizeof(cod_idProcedura));
     int bytes = SSL_read(ssl, cod_idProcedura, sizeof(cod_idProcedura));
     if (bytes > 0) {
-                cod_idProcedura[bytes] = 0;
-                idProcedura = atoi(cod_idProcedura);
-                //pvChiamante->setIdProceduraVoto(idProcedura);
+        cod_idProcedura[bytes] = 0;
+        idProcedura = atoi(cod_idProcedura);
+        //pvChiamante->setIdProceduraVoto(idProcedura);
     }
     else{
-       cerr << "ClientPV: non sono riuscito a ricevere l'idProcedura" << endl;
+        cerr << "ClientPV: non sono riuscito a ricevere l'idProcedura" << endl;
     }
 
     //SE L'ID PROCEDURA RICEVUTO È 0, NON C'È UNA PROCEDURA IN CORSO, ABORTISCO L'ATTIVAZIONE
@@ -617,9 +617,60 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     return attivata;
 }
 
-void SSLClient::inviaSchedeCompilate()
+bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac)
 {
+    bool inviata = false;
+    //richiesta servizio
+    int serviceCod = serviziUrna::invioSchedeCompilate;
+    stringstream ssCod;
+    ssCod << serviceCod;
+    string strCod = ssCod.str();
+    const char * charCod = strCod.c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+    pvChiamante->mutex_stdout.unlock();
+    SSL_write(ssl,charCod,strlen(charCod));
 
+    //invio scheda cifrata
+    int length1 = strlen(schedaCifrata.c_str());
+    string length_str1 = std::to_string(length1);
+    const char *num_bytes1 = length_str1.c_str();
+    SSL_write(ssl, num_bytes1, strlen(num_bytes1));
+    SSL_write(ssl, schedaCifrata.c_str(), length1);
+
+    //invio kc
+    int length2 = strlen(kc.c_str());
+    string length_str2 = std::to_string(length2);
+    const char *num_bytes2 = length_str2.c_str();
+    SSL_write(ssl, num_bytes2, strlen(num_bytes2));
+    SSL_write(ssl, kc.c_str(), length2);
+
+    //invio ivc
+    int length3 = strlen(ivc.c_str());
+    string length_str3 = std::to_string(length3);
+    const char *num_bytes3 = length_str3.c_str();
+    SSL_write(ssl, num_bytes3, strlen(num_bytes3));
+    SSL_write(ssl, ivc.c_str(), length3);
+
+    //invio nonce
+    int length4 = strlen(nonce.c_str());
+    string length_str4 = std::to_string(length4);
+    const char *num_bytes4 = length_str4.c_str();
+    SSL_write(ssl, num_bytes4, strlen(num_bytes4));
+    SSL_write(ssl, nonce.c_str(), length4);
+
+
+    //invio mac
+    int length5 = strlen(mac.c_str());
+    string length_str5 = std::to_string(length5);
+    const char *num_bytes5 = length_str5.c_str();
+    SSL_write(ssl, num_bytes5, strlen(num_bytes5));
+    SSL_write(ssl, mac.c_str(), length5);
+
+    //ricevi valore di successo della memorizzazione del voto
+    
+
+    return true;
 }
 
 

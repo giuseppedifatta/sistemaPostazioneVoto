@@ -53,10 +53,11 @@ signals:
 
 
 public slots:
-    void validatePassKey(QString pass);
+
     void stopServerPV();
     void selectSchedeDaMostrare();
     void inviaVotiToUrna(vector <SchedaCompilata> schede);
+    void validatePassKey(QString pass);
 
 public:
     explicit PostazioneVoto(QObject *parent = 0);

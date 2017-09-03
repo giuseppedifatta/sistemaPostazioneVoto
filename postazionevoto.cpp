@@ -253,11 +253,26 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             //generazione mac
             //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
             //chiave per HAMC: chiave di sessione tra pv e urna
+            string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
 
+            string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
-            //invio scheda votata all'urna
+            //invio pacchetto di voto all'urna
+            const char * ipUrna = "192.168.19.129";
 
+            SSLClient * pv_client = new SSLClient(this);
 
+            if(pv_client->connectTo(ipUrna)!=nullptr){
+
+                if(pv_client->inviaSchedaCompilata(schedaStr,encryptedKey, encryptedIV,std::to_string(nonce),macPacchettoVoto)){
+                    schedaStored = true;
+                }
+                else{
+                    cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
+                }
+            }
+
+            delete pv_client;
 
             //se il mac ricevuto dall'urna è univoco rispetto al db, riceviamo il valore di successo dall'urna e settiamo schedaStored a true
 
@@ -369,7 +384,7 @@ string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
 
 void PostazioneVoto::validatePassKey(QString pass)
 {
-    //contatto l'urna per validare la passward
+    //contatto l'urna per validare la password
     const char * ipUrna = "192.168.19.129";
 
     SSLClient * pv_client = new SSLClient(this);
@@ -442,7 +457,7 @@ string PostazioneVoto::calcolaMAC(string key, string plainText){
     //        ) // HexEncoder
     //    ); // StringSource
 
-    cout << "key: " << key << endl;
+    cout << "Session key: " << encodedKey << endl;
     string decodedKey;
 
     StringSource ss(encodedKey,
