@@ -198,9 +198,9 @@ void PostazioneVoto::selectSchedeDaMostrare()
 
 void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 {
-    //TODO con i dati della schede compilate, creare un vettore di file xml
+    //TODO con i dati della schede compilate, per ogni scheda crea un file xml
     //di cui cifrare i campi contenenti i candidati votati e
-    //quindi inviare uno per volta i file all'urna
+    //quindi invia uno per volta i file all'urna
 
     for (uint i = 0; i < schede.size(); i++){
         bool schedaStored = false;
@@ -222,7 +222,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
 
 
-        //TODO cifratura chiave simmetrica e iv con chiave pubblica di RP
+        //cifratura chiave simmetrica e iv con chiave pubblica di RP
         cout << "cifro Key e IV " << endl;
         string encryptedKey = encryptRSA_withPublickKeyRP(key);
         string encryptedIV = encryptRSA_withPublickKeyRP(iv);
@@ -281,10 +281,14 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
 
         }
+
+
     }
 
 
     //tutte le schede votate sono state recapitate correttamente nell'urna
+
+    cout << "tutte le schede sono state consegnate all'urna virtuale" << endl;
     //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
     setStatoPV(statiPV::votazione_completata);
 }
