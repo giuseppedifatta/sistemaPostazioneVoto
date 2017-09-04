@@ -563,7 +563,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
 
     //se l'attivazione ha avuto successo ricevo le schede dall'urna e la chiave pubblica di RP
     if(attivata){
-        //schede
+        //ricevo schede
         memset(buffer, '\0', sizeof(buffer));
         bytes = SSL_read(ssl,buffer,sizeof(buffer));
         if(bytes > 0){
@@ -575,6 +575,8 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
                 bytes = SSL_read(ssl,buffer,sizeof(buffer));
                 if(bytes > 0){
                     buffer[bytes] = 0;
+
+                    //lunghezza fileScheda da ricevere
                     uint length = atoi(buffer);
                     char fileScheda[length+1];
                     memset(fileScheda, '\0', sizeof(fileScheda));
@@ -584,6 +586,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
                         string scheda = fileScheda;
                         cout << scheda << endl;
                         pvChiamante->addScheda(scheda);
+                        cout << "scheda " << i+1 << " ricevuta" << endl;
                     }
                     else{
                         cerr << "scheda " << i+1 << " non ricevuta" << endl;
@@ -598,7 +601,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
             cerr << "ClientPV: schede di voto non ricevute" << endl;
         }
 
-        //chiave pubblica RP
+        //ricevo chiave pubblica RP
         memset(buffer, '\0', sizeof(buffer));
         bytes = SSL_read(ssl,buffer,sizeof(buffer));
         if(bytes > 0){
@@ -668,9 +671,22 @@ bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc
     SSL_write(ssl, mac.c_str(), length5);
 
     //ricevi valore di successo della memorizzazione del voto
-    
+    // 0 -> success
+    // 1 -> error
 
-    return true;
+    char buffer[16];
+    memset(buffer, '\0', sizeof(buffer));
+    int bytes = SSL_read(ssl,buffer,sizeof(buffer));
+    if(bytes > 0){
+        buffer[bytes] = 0;
+        int result = atoi(buffer);
+        if (result == 0){
+            inviata = true;
+        }
+
+    }
+
+    return inviata;
 }
 
 

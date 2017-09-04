@@ -89,7 +89,7 @@ public:
     void resetHT();
     void backToPostazioneAttiva();
     void setIdProceduraVoto(uint idProcedura);
-    string calcolaMAC(string key, string plainText);
+    string calcolaMAC(string encodedSessionKey, string plainText);
     void addScheda(string scheda);
     string getSessionKey_PV_Urna() const;
     void setSessionKey_PV_Urna(const string &value);

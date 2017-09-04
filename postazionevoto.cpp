@@ -265,6 +265,11 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             if(pv_client->connectTo(ipUrna)!=nullptr){
 
                 if(pv_client->inviaSchedaCompilata(schedaStr,encryptedKey, encryptedIV,std::to_string(nonce),macPacchettoVoto)){
+
+                    //se il mac ricevuto dall'urna è univoco rispetto al db,
+                    //la memorizzazione del voto andrà a buon fine
+                    //settiamo schedaStored a true
+
                     schedaStored = true;
                 }
                 else{
@@ -274,10 +279,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
             delete pv_client;
 
-            //se il mac ricevuto dall'urna è univoco rispetto al db, riceviamo il valore di successo dall'urna e settiamo schedaStored a true
 
-
-            schedaStored = true;
         }
     }
 
@@ -441,54 +443,50 @@ void PostazioneVoto::setIdProceduraVoto(uint idProcedura){
     this->idProceduraVoto = idProcedura;
 }
 
-string PostazioneVoto::calcolaMAC(string key, string plainText){
-    //AutoSeededRandomPool prng;
+string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
 
-    //    SecByteBlock key(16);
-    //    prng.GenerateBlock(key, key.size());
 
-    string encodedKey = key;//"11A47EC4465DD95FCD393075E7D3C4EB";
+    //"11A47EC4465DD95FCD393075E7D3C4EB";
+
+    cout << "Session key: " << encodedSessionKey << endl;
+    string decodedKey;
+    StringSource (encodedSessionKey,true,
+            new HexDecoder(
+                    new StringSink(decodedKey)
+            ) // HexDecoder
+    ); // StringSource
+
+    SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
+
+
+    string macCalculated, encoded;
+
+    /*********************************\
+    \*********************************/
 
     // Pretty print key
-    //    encodedKey.clear();
-    //    StringSource ss1(decodedKey, decodedKey.size(), true,
-    //        new HexEncoder(
-    //            new StringSink(encodedKey)
-    //        ) // HexEncoder
-    //    ); // StringSource
+    encoded.clear();
+    StringSource(key, key.size(), true,
+        new HexEncoder(
+            new StringSink(encoded)
+        ) // HexEncoder
+    ); // StringSource
+    cout << "key encoded: " << encoded << endl;
 
-    cout << "Session key: " << encodedKey << endl;
-    string decodedKey;
-
-    StringSource ss(encodedKey,
-                    new HexDecoder(new StringSink(decodedKey)) // HexDecoder
-                    ); // StringSource
-
-    string plain = plainText;//"HMAC Test";
-    string mac, encodedMAC;
+    cout << "plain text: " << plainText << endl;
 
     /*********************************\
     \*********************************/
 
-
-    cout << "plain text: " << plain << endl;
-
-    /*********************************\
-    \*********************************/
-
-
-    //generazione dell'hmac
     try
     {
-        //dichiarazione del filtro con impostazione della chiave
-        SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
         CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
 
-        StringSource ss2(plain, true,
-                         new HashFilter(hmac,
-                                        new StringSink(mac)
-                                        ) // HashFilter
-                         ); // StringSource
+        StringSource(plainText, true,
+            new HashFilter(hmac,
+                new StringSink(macCalculated)
+            ) // HashFilter
+        ); // StringSource
     }
     catch(const CryptoPP::Exception& e)
     {
@@ -499,18 +497,17 @@ string PostazioneVoto::calcolaMAC(string key, string plainText){
     /*********************************\
     \*********************************/
 
-    // Pretty print
-    encodedMAC.clear();
-    StringSource ss3(mac, true,
-                     new HexEncoder(
-                         new StringSink(encodedMAC)
-                         ) // HexEncoder
-                     ); // StringSource
+    // Pretty print MAC
+    string macEncoded;
+    StringSource(macCalculated, true,
+        new HexEncoder(
+            new StringSink(macEncoded)
+        ) // HexEncoder
+    ); // StringSource
+    cout << "hmac encoded: " << macEncoded << endl;
 
-    cout << "hmac: " << encodedMAC << endl;
 
-    //qui encoded contiene l'hmac
-    return encodedMAC;
+    return macEncoded;
 }
 
 void PostazioneVoto::addScheda(string scheda)
