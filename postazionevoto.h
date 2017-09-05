@@ -60,6 +60,7 @@ public slots:
     void selectSchedeDaMostrare();
     void inviaVotiToUrna(vector <SchedaCompilata> schede);
     void validatePassKey(QString pass);
+    void validateOTP(QString otp);
 
 public:
     explicit PostazioneVoto(QObject *parent = 0);

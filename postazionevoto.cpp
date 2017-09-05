@@ -45,11 +45,12 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //dovrei usare un mutex
     mutex_statoPV.lock();
     this->statoPV = nuovoStato;
-    emit stateChange(nuovoStato);
     mutex_statoPV.unlock();
 
-
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
+    emit stateChange(nuovoStato);
+
+
 
 
     this->mutex_stdout.lock();
@@ -197,7 +198,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
         schedeDaMostrare.push_back(schedeVoto.at(i));
     }
 
-    this->setStatoPV(statiPV::votazione_in_corso);
+    //this->setStatoPV(statiPV::votazione_in_corso);
     emit giveSchedeToView(schedeDaMostrare);
 }
 
@@ -435,6 +436,15 @@ void PostazioneVoto::validatePassKey(QString pass)
     }
 
     delete pv_client;
+}
+
+void PostazioneVoto::validateOTP(QString otp)
+{
+
+    //TODO contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
+    if(otp=="123456"){
+        enablingPV();
+    }
 }
 
 

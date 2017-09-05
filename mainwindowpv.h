@@ -53,6 +53,8 @@ private slots:
 
     void on_listWidget_scheda_itemChanged(QListWidgetItem *item);
 
+    void on_confermaOTP_button_clicked();
+
 public slots:
     void updateInterfaccia(unsigned int statoPV);
     void messageErrorPassword();
@@ -62,6 +64,7 @@ signals:
     void stopThreads();
     void needSchede();
     void inviaSchedeCompilate(vector <SchedaCompilata> schede);
+    void checkOTP(QString);
 };
 
 #endif // MAINWINDOWPV_H

@@ -22,9 +22,11 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(this, SIGNAL(stopThreads()), pv, SLOT(stopServerPV()));
     QObject::connect(pv, SIGNAL(wrongPassKey()),this, SLOT(messageErrorPassword()));
     QObject::connect(this,SIGNAL(needSchede()),pv,SLOT(selectSchedeDaMostrare()));
+//    qRegisterMetaType< vector<SchedaVoto>>( "vector<SchedaVoto>" );
+//    qRegisterMetaType< vector<SchedaCompilata>>( "vector<SchedaCompilata>" );
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna(vector<SchedaCompilata>)));
-
+    QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
     //avvio il thread del model
     pv->start();
 
@@ -203,9 +205,9 @@ void MainWindowPV::updateInterfaccia(unsigned int statoPV){
         cout << "schermata abilitazione otp impostata" << endl;
         break;
     case pv->statiPV::votazione_in_corso:
-        emit needSchede();
-        //ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
-        cout << "schede di voto richieste" << endl;
+        cout << "richiesta schede di voto" << endl;
+        emit needSchede();        
+        ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
         break;
     case pv->statiPV::votazione_completata:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::votoInviato);
@@ -295,4 +297,14 @@ void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
     }
     cout << "Preferenze massime:" << numPreferenzeMax << endl;
     cout << "Numero preferenze selezionate: " << numChecked << endl;
+}
+
+void MainWindowPV::on_confermaOTP_button_clicked()
+{
+    QString otp = ui->codiceOTP_lineEdit->text();
+
+    //TODO check codice otp sul server
+
+
+    emit checkOTP(otp);
 }
