@@ -12,6 +12,8 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <sstream>
+
 #include "sslclient.h"
 #include "sslserver.h"
 #include "mainwindowpv.h"
@@ -83,6 +85,7 @@ public:
     void runServicesToSeggio();
 
     mutex mutex_stdout;
+    mutex mutex_statoPV;
     QMutex mutex_run_server;
 
     bool setHTAssociato(unsigned int tokenCod);

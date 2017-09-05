@@ -607,9 +607,10 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
         if(bytes > 0){
             buffer[bytes] = 0;
             uint lunghezzaPublicKey = atoi(buffer);
-            char bufferKey[lunghezzaPublicKey];
+            char bufferKey[lunghezzaPublicKey+1];
             bytes = SSL_read(ssl,bufferKey,sizeof(bufferKey));
             if(bytes > 0){
+                bufferKey[bytes]=0;
                 string publicKey = bufferKey;
                 cout << "publicKey RP: " << publicKey << endl;
                 pvChiamante->setRSAPublicKeyRP(publicKey);

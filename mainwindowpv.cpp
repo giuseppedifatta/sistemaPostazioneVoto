@@ -84,6 +84,7 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
     indiceSchedaDaMostrare = 0;
     mostraScheda();
 
+
 }
 
 
@@ -167,6 +168,7 @@ void MainWindowPV::mostraScheda(){
     //purtroppo non riesco a catturare l'evento di check sugli item diversamente
     numChecked = 0;
     addingElementToListWidget = false;
+
     ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
 
 }
@@ -199,7 +201,7 @@ void MainWindowPV::updateInterfaccia(unsigned int statoPV){
     case pv->statiPV::attesa_abilitazione:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::abilitazione);
         cout << "schermata abilitazione otp impostata" << endl;
-        //break;
+        break;
     case pv->statiPV::votazione_in_corso:
         emit needSchede();
         //ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);

@@ -6,7 +6,7 @@
  */
 
 #include "postazionevoto.h"
-
+int verifyMAC(string encodedSessionKey,string data, string macEncoded);
 PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
     //mainWindow = m;
@@ -43,10 +43,14 @@ bool PostazioneVoto::PostazioneVoto::offlinePV() {
 void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
 
     //dovrei usare un mutex
+    mutex_statoPV.lock();
     this->statoPV = nuovoStato;
+    emit stateChange(nuovoStato);
+    mutex_statoPV.unlock();
+
 
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
-    emit stateChange(nuovoStato);
+
 
     this->mutex_stdout.lock();
     cout << "PV: segnalato alla view che lo stato della postazione è cambiato"  << endl;
@@ -193,6 +197,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
         schedeDaMostrare.push_back(schedeVoto.at(i));
     }
 
+    this->setStatoPV(statiPV::votazione_in_corso);
     emit giveSchedeToView(schedeDaMostrare);
 }
 
@@ -225,7 +230,10 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
         //cifratura chiave simmetrica e iv con chiave pubblica di RP
         cout << "cifro Key e IV " << endl;
         string encryptedKey = encryptRSA_withPublickKeyRP(key);
+        cout << "encrypted key: " << encryptedKey << endl;
         string encryptedIV = encryptRSA_withPublickKeyRP(iv);
+        cout << "encrypted IV: " << encryptedIV << endl;
+
 
         //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
         //        string encryptedIV = std::string(reinterpret_cast<const char*>(iv.data()), iv.size());
@@ -233,7 +241,14 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
         while (!schedaStored){
             //generazione nonce
-            uint nonce = rng.GenerateBit();
+
+            Integer randomUint(rng,32);
+            std::stringstream ss;
+            ss << randomUint;
+            std::string s(ss.str());
+            uint nonce = atoi(s.c_str());
+
+            cout << "nonce: " << nonce << endl;
 
             //cifratura nonce
             string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
@@ -254,6 +269,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
             //chiave per HAMC: chiave di sessione tra pv e urna
             string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
+            cout << "Dati di cui calcolare il mac: " << datiConcatenati << endl;
 
             string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
@@ -357,8 +373,14 @@ string PostazioneVoto::encryptStdString(string plaintext, SecByteBlock key, SecB
     stfEncryptor.Put(reinterpret_cast<const unsigned char*>(plaintext.c_str()),plaintext.length() + 1);
     stfEncryptor.MessageEnd();
 
+    string encodedCiphertext;
+    StringSource(ciphertext, true,
+                 new HexEncoder(
+                     new StringSink(encodedCiphertext)
+                     ) // HexEncoder
+                 ); // StringSource
 
-    return ciphertext;
+    return encodedCiphertext;
 }
 
 string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
@@ -370,8 +392,8 @@ string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
     // Now that there is a concrete object, we can validate
     assert(0 != encryptor.FixedMaxPlaintextLength());
     assert(
-            CryptoPP::AES::DEFAULT_KEYLENGTH
-                    <= encryptor.FixedMaxPlaintextLength());
+                CryptoPP::AES::DEFAULT_KEYLENGTH
+                <= encryptor.FixedMaxPlaintextLength());
 
     // Create cipher key space
     size_t ecl = encryptor.CiphertextLength(value.size());
@@ -385,7 +407,13 @@ string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
 
     string encryptedValue = std::string(reinterpret_cast<const char*>(cipherKey.data()), cipherKey.size());
 
-    return encryptedValue;
+    string encodedEncryptedValue;
+    StringSource(encryptedValue,true,
+                 new HexEncoder(
+                     new StringSink(encodedEncryptedValue)
+                     )
+                 );
+    return encodedEncryptedValue;
 }
 
 void PostazioneVoto::validatePassKey(QString pass)
@@ -455,10 +483,10 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     cout << "Session key: " << encodedSessionKey << endl;
     string decodedKey;
     StringSource (encodedSessionKey,true,
-            new HexDecoder(
-                    new StringSink(decodedKey)
-            ) // HexDecoder
-    ); // StringSource
+                  new HexDecoder(
+                      new StringSink(decodedKey)
+                      ) // HexDecoder
+                  ); // StringSource
 
     SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
 
@@ -471,10 +499,10 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     // Pretty print key
     encoded.clear();
     StringSource(key, key.size(), true,
-        new HexEncoder(
-            new StringSink(encoded)
-        ) // HexEncoder
-    ); // StringSource
+                 new HexEncoder(
+                     new StringSink(encoded)
+                     ) // HexEncoder
+                 ); // StringSource
     cout << "key encoded: " << encoded << endl;
 
     cout << "plain text: " << plainText << endl;
@@ -487,15 +515,15 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
         CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
 
         StringSource(plainText, true,
-            new HashFilter(hmac,
-                new StringSink(macCalculated)
-            ) // HashFilter
-        ); // StringSource
+                     new HashFilter(hmac,
+                                    new StringSink(macCalculated)
+                                    ) // HashFilter
+                     ); // StringSource
     }
     catch(const CryptoPP::Exception& e)
     {
         cerr << e.what() << endl;
-        exit(1);
+
     }
 
     /*********************************\
@@ -504,14 +532,62 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     // Pretty print MAC
     string macEncoded;
     StringSource(macCalculated, true,
-        new HexEncoder(
-            new StringSink(macEncoded)
-        ) // HexEncoder
-    ); // StringSource
+                 new HexEncoder(
+                     new StringSink(macEncoded)
+                     ) // HexEncoder
+                 ); // StringSource
     cout << "hmac encoded: " << macEncoded << endl;
 
+    verifyMAC(encodedSessionKey,plainText, macEncoded);
 
     return macEncoded;
+}
+
+int verifyMAC(string encodedSessionKey,string data, string macEncoded){
+    int success = 0;
+    cout << "Dati da verificare: " << data << endl;
+    cout << "mac da verificare: " << macEncoded << endl;
+
+    string decodedKey;
+    cout << "Session key: " << encodedSessionKey << endl;
+
+    StringSource (encodedSessionKey,true,
+                  new HexDecoder(
+                      new StringSink(decodedKey)
+                      ) // HexDecoder
+                  ); // StringSource
+
+    SecByteBlock key2(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
+
+    string macDecoded;
+    StringSource(macEncoded, true,
+                 new HexDecoder(
+                     new StringSink(macDecoded)
+                     ) // HexDecoder
+                 ); // StringSource
+    cout << "hmac decoded: " << macDecoded << endl;
+
+    try
+    {
+        CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key2, key2.size());
+        const int flags = HashVerificationFilter::THROW_EXCEPTION | HashVerificationFilter::HASH_AT_END;
+
+
+
+        StringSource(data + macDecoded, true,
+                     new HashVerificationFilter(hmac, NULL, flags)
+                     ); // StringSource
+
+        cout << "Verified message" << endl;
+        success = 0;
+    }
+    catch(const CryptoPP::Exception& e)
+    {
+        success = 1;
+        cerr << e.what() << endl;
+        exit(1);
+    }
+    return success;
 }
 
 void PostazioneVoto::addScheda(string scheda)

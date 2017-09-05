@@ -289,7 +289,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         int success = -1;
         if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione)
                 || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
-            //TODO imposta stato postazione a libera
+            //imposta stato postazione a libera
 
             pvChiamante->resetHT();
             pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
@@ -313,10 +313,33 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         SSL_write(ssl,successValue,strlen(successValue));
         break;
     }
-    case servizi::freePV:
+    case servizi::freePV:{
+        int success = -1;
+        if( pvChiamante->getStatoPV() == pvChiamante->statiPV::votazione_completata ){
+            //imposta stato postazione a libera
+
+            pvChiamante->resetHT();
+            pvChiamante->setStatoPV(pvChiamante->statiPV::libera);
+            success = 0;
+            pvChiamante->mutex_stdout.lock();
+            cout << "ServerPV: postazione liberata! "<< endl;
+            pvChiamante->mutex_stdout.unlock();
+
+        }
+
+        //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
+
+        string str = to_string(success);
+        pvChiamante->mutex_stdout.lock();
+        cout << "ServerPV: freePV: return value to seggio: " << success << endl;
+        pvChiamante->mutex_stdout.unlock();
+
+        //inviamo al seggio un codice relativo all'esito dell'operazione
+        const char * successValue = str.c_str();
+        SSL_write(ssl,successValue,strlen(successValue));
         break;
 
-
+    }
     }
 
     return;
