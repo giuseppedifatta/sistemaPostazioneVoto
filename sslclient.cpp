@@ -533,7 +533,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
         pvChiamante->setIdProceduraVoto(idProcedura);
     }
 
-    string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura)); //implementare
+    string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura));
 
     //invio MAC all'URNA
 

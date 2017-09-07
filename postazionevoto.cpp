@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     //TODO calcolare dall'indirizzo IP
     idPostazioneVoto = 1;
 
-    postazioneSeggio = "192.168.56.100"; //ricavare l'IP della postazione seggio a cui la postazione voto appartiene1
+    postazioneSeggio = "192.168.56.100"; //TODO ricavare l'IP della postazione seggio a cui la postazione voto appartiene
 
     //init client
     //this->pv_client = new SSLClient(this);
@@ -30,7 +30,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
 
 PostazioneVoto::~PostazioneVoto() {
     // TODO Auto-generated destructor stub
-    // delete this->pv_client;
+
 }
 
 bool PostazioneVoto::PostazioneVoto::offlinePV() {
@@ -195,6 +195,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
 
     for (unsigned int i = 0; i < schedeVoto.size(); i++){
         //TODO seleziona la scheda se l'elettore corrente assegnato alla postazione può votare per questa scheda
+
         schedeDaMostrare.push_back(schedeVoto.at(i));
     }
 
@@ -204,7 +205,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
 
 void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 {
-    //TODO con i dati della schede compilate, per ogni scheda crea un file xml
+    // con i dati della schede compilate, per ogni scheda crea un file xml
     //di cui cifrare i campi contenenti i candidati votati e
     //quindi invia uno per volta i file all'urna
 
@@ -553,7 +554,7 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     return macEncoded;
 }
 
-int verifyMAC(string encodedSessionKey,string data, string macEncoded){
+int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEncoded){
     int success = 0;
     cout << "Dati da verificare: " << data << endl;
     cout << "mac da verificare: " << macEncoded << endl;
@@ -604,7 +605,7 @@ void PostazioneVoto::addScheda(string scheda)
 {
     SchedaVoto sv;
 
-    //TODO parsing file xml e inserimento dati nell'oggetto scheda voto da aggiungere al vettore delle schede
+    //parsing file xml e inserimento dati nell'oggetto scheda voto da aggiungere al vettore delle schede
 
     XMLDocument xmlDoc;
     xmlDoc.Parse(scheda.c_str());

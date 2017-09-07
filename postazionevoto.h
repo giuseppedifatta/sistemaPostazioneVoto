@@ -101,6 +101,7 @@ public:
     //string getPublicKeyRP() const;
     void setRSAPublicKeyRP(const string &publicKeyEncoded);
 
+    int verifyMAC(string encodedSessionKey, string data, string macEncoded);
 private:
     const char * postazioneSeggio;
     //dati membro
@@ -112,7 +113,7 @@ private:
 
     unsigned int idProceduraVoto;
     vector <SchedaVoto> schedeVoto;
-    unsigned int tipoElettore;//in funziona di questo valore vanno selezionate le schede da mostrare per la compilazione
+    unsigned int tipoElettore;//in funzione di questo valore vanno selezionate le schede da mostrare per la compilazione
 
     //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
