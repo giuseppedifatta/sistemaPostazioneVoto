@@ -63,6 +63,9 @@ private:
     int verify_callback(int preverify, X509_STORE_CTX* x509_ctx);
     void print_san_name(const char* label, X509* const cert);
     void print_cn_name(const char* label, X509_NAME* const name);
+
+    void sendString_SSL(SSL *ssl, string s);
+    int receiveString_SSL(SSL *ssl, string &s);
 };
 
 #endif // SSLSERVER_H

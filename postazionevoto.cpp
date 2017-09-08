@@ -18,7 +18,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     idPostazioneVoto = 1;
 
     postazioneSeggio = "192.168.56.100"; //TODO ricavare l'IP della postazione seggio a cui la postazione voto appartiene
-
+    ipUrna = "192.168.19.130";
     //init client
     //this->pv_client = new SSLClient(this);
 
@@ -209,7 +209,9 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
     //di cui cifrare i campi contenenti i candidati votati e
     //quindi invia uno per volta i file all'urna
 
-    for (uint i = 0; i < schede.size(); i++){
+    //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
+
+    for (uint i = schede.size(); i > 0; i--){
         bool schedaStored = false;
         //generazione chiave simmetrica e iv
         AutoSeededRandomPool rng;
@@ -240,8 +242,8 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
         //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
         //        string encryptedIV = std::string(reinterpret_cast<const char*>(iv.data()), iv.size());
 
-
-        while (!schedaStored){
+        bool urnaUnreachable = false;
+        while (!schedaStored && !urnaUnreachable){
             //generazione nonce
 
             Integer randomUint(rng,32);
@@ -276,7 +278,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
             //invio pacchetto di voto all'urna
-            const char * ipUrna = "192.168.19.129";
+
 
             SSLClient * pv_client = new SSLClient(this);
 
@@ -289,12 +291,17 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
                     //settiamo schedaStored a true
 
                     schedaStored = true;
+                    schede.pop_back();
                 }
                 else{
                     cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
                 }
             }
-
+            else{
+                emit urnaNonRaggiungibile();
+                this->setStatoPV(statiPV::offline);
+                urnaUnreachable = true;
+            }
             delete pv_client;
 
 
@@ -421,7 +428,7 @@ string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
 void PostazioneVoto::validatePassKey(QString pass)
 {
     //contatto l'urna per validare la password
-    const char * ipUrna = "192.168.19.129";
+
 
     SSLClient * pv_client = new SSLClient(this);
 
@@ -435,6 +442,10 @@ void PostazioneVoto::validatePassKey(QString pass)
             emit wrongPassKey();
         }
     }
+    else{
+        emit urnaNonRaggiungibile();
+        this->setStatoPV(statiPV::offline);
+    }
 
     delete pv_client;
 }
@@ -445,6 +456,9 @@ void PostazioneVoto::validateOTP(QString otp)
     //TODO contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
     if(otp=="123456"){
         enablingPV();
+    }
+    else{
+        emit wrongOTP();
     }
 }
 
@@ -746,13 +760,23 @@ void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
 {
     string decodedPublicKey;
 
-    StringSource ssDecoded(publicKeyEncoded, true /*pump all*/,
-                           new HexDecoder(
-                               new StringSink(decodedPublicKey)
-                               ) // HexDecoder
-                           ); // StringSource
+    StringSource (publicKeyEncoded, true /*pump all*/,
+                  new HexDecoder(
+                      new StringSink(decodedPublicKey)
+                      ) // HexDecoder
+                  ); // StringSource
     cout << "publicKey decodedificata da esadecimale: " << decodedPublicKey << endl;
 
     StringSource ss(decodedPublicKey,true /*pumpAll*/);
     rsaPublicKeyRP.Load(ss);
+}
+
+unsigned int PostazioneVoto::getTipoElettore() const
+{
+    return tipoElettore;
+}
+
+void PostazioneVoto::setTipoElettore(unsigned int value)
+{
+    tipoElettore = value;
 }

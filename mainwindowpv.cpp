@@ -27,6 +27,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna(vector<SchedaCompilata>)));
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
+    QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showMessageUrnaUnreachable()));
     //avvio il thread del model
     pv->start();
 
@@ -87,6 +88,21 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
     mostraScheda();
 
 
+}
+
+void MainWindowPV::showErrorOTP()
+{
+    QMessageBox msgBox(this);
+    msgBox.setInformativeText("Il codice OTP inserito non è valido, riprovare...");
+    msgBox.exec();
+    ui->codiceOTP_lineEdit->clear();
+}
+
+void MainWindowPV::showMessageUrnaUnreachable()
+{
+    QMessageBox msgBox(this);
+    msgBox.setInformativeText("Impossibile comunicare con l'Urna, rivolgersi alla commissione");
+    msgBox.exec();
 }
 
 
@@ -307,4 +323,5 @@ void MainWindowPV::on_confermaOTP_button_clicked()
 
 
     emit checkOTP(otp);
+    ui->codiceOTP_lineEdit->clear();
 }

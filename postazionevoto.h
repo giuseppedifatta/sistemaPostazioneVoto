@@ -52,7 +52,8 @@ signals:
     void stateChange(unsigned int);
     void wrongPassKey();
     void giveSchedeToView(vector <SchedaVoto> schedeDaMostrare);
-
+    void wrongOTP();
+    void urnaNonRaggiungibile();
 
 public slots:
 
@@ -101,8 +102,12 @@ public:
     //string getPublicKeyRP() const;
     void setRSAPublicKeyRP(const string &publicKeyEncoded);
 
-    int verifyMAC(string encodedSessionKey, string data, string macEncoded);
+
+    unsigned int getTipoElettore() const;
+    void setTipoElettore(unsigned int value);
+
 private:
+    const char * ipUrna;
     const char * postazioneSeggio;
     //dati membro
 
@@ -115,6 +120,9 @@ private:
     vector <SchedaVoto> schedeVoto;
     unsigned int tipoElettore;//in funzione di questo valore vanno selezionate le schede da mostrare per la compilazione
 
+    string usernameHTAssociato;
+    uint matricolaVotante;
+    //vector <SchedaCompilata> schedeDaInviare;
     //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
     unsigned int symKeyAES; //chiave per la cifratura simmetrica, non di tipo uint
@@ -135,6 +143,7 @@ private:
     void creaSchedaCompilataXML_AES(XMLDocument *xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv);
     string encryptStdString(string plaintext, SecByteBlock key, SecByteBlock iv);
     string encryptRSA_withPublickKeyRP(SecByteBlock value);
+    int verifyMAC(string encodedSessionKey, string data, string macEncoded);
 protected:
 
     //monitoraggio postazione, servizi per il seggio

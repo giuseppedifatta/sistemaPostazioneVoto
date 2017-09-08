@@ -224,12 +224,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
     pvChiamante->mutex_stdout.lock();
     cout << "ServerPV: service started: " << servizio << endl;
     pvChiamante->mutex_stdout.unlock();
-    char buf[128];
 
-    memset(buf, '\0', sizeof(buf));
-    //memset(cod_service, '\0', sizeof(cod_service));
-
-    int bytes=0;
 
     switch (servizio) {
 
@@ -237,24 +232,30 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
 
         int success = -1;
         unsigned int idHT;
+        unsigned int ruoloVotante;
 
-        bytes = SSL_read(ssl, buf, sizeof(buf));
-        if (bytes>0){
-            buf[bytes] = 0;
-            idHT = atoi(buf);
-            pvChiamante->mutex_stdout.lock();
-            cout << "ServerPV: ht da settare: " << idHT << endl;
-            pvChiamante->mutex_stdout.unlock();
+        //ricevi ht da settare
+        string ht;
+        receiveString_SSL(ssl,ht);
+        idHT = atoi(ht.c_str());
+        pvChiamante->mutex_stdout.lock();
+        cout << "ServerPV: ht da settare: " << idHT << endl;
+        pvChiamante->mutex_stdout.unlock();
 
+        //ricevi ruoloVotante
+        string strRuolo;
+        receiveString_SSL(ssl,strRuolo);
+        ruoloVotante = atoi(strRuolo.c_str());
+        pvChiamante->setTipoElettore(ruoloVotante);
 
-            if(pvChiamante->setHTAssociato(idHT)){ //restituisce true se l'esito dell'operazione è positivo
-                success = 0;
-                pvChiamante->setStatoPV(pvChiamante->statiPV::attesa_abilitazione);
-            }
+        //TODO ricevi matricola votante
+
+        if(pvChiamante->setHTAssociato(idHT)){ //restituisce true se l'esito dell'operazione è positivo
+            success = 0;
+            pvChiamante->setStatoPV(pvChiamante->statiPV::attesa_abilitazione);
         }
-        else{
-            cerr << "ServerPV: error to read HT cod" << endl;
-        }
+
+
 
         //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
         stringstream ss;
@@ -858,4 +859,32 @@ int SSLServer::myssl_fwrite(const char * infile) {
 
 void SSLServer::setStopServer(bool b){
     this->stopServer=b;
+}
+
+int SSLServer::receiveString_SSL(SSL* ssl, string &s){
+
+    char dim_string[16];
+    memset(dim_string, '\0', sizeof(dim_string));
+    int bytes = SSL_read(ssl, dim_string, sizeof(dim_string));
+    if (bytes > 0) {
+        dim_string[bytes] = 0;
+        //lunghezza fileScheda da ricevere
+        uint length = atoi(dim_string);
+        char buffer[length + 1];
+        memset(buffer, '\0', sizeof(buffer));
+        bytes = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytes > 0) {
+            buffer[bytes] = 0;
+            s = buffer;
+        }
+    }
+    return bytes; //bytes read for the string received
+}
+
+void SSLServer::sendString_SSL(SSL* ssl, string s) {
+    int length = strlen(s.c_str());
+    string length_str = std::to_string(length);
+    const char *num_bytes = length_str.c_str();
+    SSL_write(ssl, num_bytes, strlen(num_bytes));
+    SSL_write(ssl, s.c_str(), length);
 }

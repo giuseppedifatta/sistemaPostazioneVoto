@@ -36,7 +36,9 @@ private:
     void verify_ServerCert();
     void cleanup_openssl();
 
-    public:
+    void sendString_SSL(SSL *ssl, string s);
+    int receiveString_SSL(SSL *ssl, string &s);
+public:
     SSLClient(PostazioneVoto * pv);
     ~SSLClient();
 

@@ -59,6 +59,8 @@ public slots:
     void updateInterfaccia(unsigned int statoPV);
     void messageErrorPassword();
     void receiveSchedeToShow(vector <SchedaVoto> schede);
+    void showErrorOTP();
+    void showMessageUrnaUnreachable();
 signals:
     void checkPassKey(QString passKey);
     void stopThreads();

@@ -690,4 +690,30 @@ bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc
     return inviata;
 }
 
+int SSLClient::receiveString_SSL(SSL* ssl, string &s){
 
+    char dim_string[16];
+    memset(dim_string, '\0', sizeof(dim_string));
+    int bytes = SSL_read(ssl, dim_string, sizeof(dim_string));
+    if (bytes > 0) {
+        dim_string[bytes] = 0;
+        //lunghezza fileScheda da ricevere
+        uint length = atoi(dim_string);
+        char buffer[length + 1];
+        memset(buffer, '\0', sizeof(buffer));
+        bytes = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytes > 0) {
+            buffer[bytes] = 0;
+            s = buffer;
+        }
+    }
+    return bytes; //bytes read for the string received
+}
+
+void SSLClient::sendString_SSL(SSL* ssl, string s) {
+    int length = strlen(s.c_str());
+    string length_str = std::to_string(length);
+    const char *num_bytes = length_str.c_str();
+    SSL_write(ssl, num_bytes, strlen(num_bytes));
+    SSL_write(ssl, s.c_str(), length);
+}
