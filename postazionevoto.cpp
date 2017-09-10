@@ -13,6 +13,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     HTAssociato = 0;
     ivCBC = 0;
     symKeyAES = 0;
+    attivata = false;
 
     //TODO calcolare dall'indirizzo IP
     idPostazioneVoto = 1;
@@ -45,6 +46,9 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
     //dovrei usare un mutex
     mutex_statoPV.lock();
     this->statoPV = nuovoStato;
+    if(nuovoStato==statiPV::libera){
+        attivata = true;
+    }
     mutex_statoPV.unlock();
 
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
@@ -209,9 +213,37 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
     //di cui cifrare i campi contenenti i candidati votati e
     //quindi invia uno per volta i file all'urna
 
-    //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
+    //salvo temporaneamente le schede sulla postazione di voto
+    for (uint i = 0; i< schede.size(); i++){
+        schedeDaInviare.push_back(schede.at(i));
+    }
 
-    for (uint i = schede.size(); i > 0; i--){
+    //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
+    SSLClient * pv_client1 = new SSLClient(this);
+
+    if(pv_client1->connectTo(ipUrna)!=nullptr){
+
+        if(pv_client1->setVoted(matricolaVotante)){
+                cout << "l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
+
+        }
+        else{
+            cerr << "impossibile comunicare esito della votazione all'urna" << endl;
+        }
+    }
+    else{
+        emit urnaNonRaggiungibile();
+        this->setStatoPV(statiPV::offline);
+        delete pv_client1;
+        //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
+        //le schede di voto, sono attualmente salvate nel vettore delle schedeDaInviare
+        return;
+    }
+    delete pv_client1;
+
+
+
+    for(uint i = 0; i < schedeDaInviare.size(); i++){
         bool schedaStored = false;
         //generazione chiave simmetrica e iv
         AutoSeededRandomPool rng;
@@ -227,9 +259,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
         //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
         XMLDocument xmlDoc;
-        creaSchedaCompilataXML_AES(&xmlDoc,schede.at(i),key,iv);
-
-
+        creaSchedaCompilataXML_AES(&xmlDoc,schedeDaInviare.at(i),key,iv);
 
         //cifratura chiave simmetrica e iv con chiave pubblica di RP
         cout << "cifro Key e IV " << endl;
@@ -278,8 +308,6 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
             //invio pacchetto di voto all'urna
-
-
             SSLClient * pv_client = new SSLClient(this);
 
             if(pv_client->connectTo(ipUrna)!=nullptr){
@@ -291,7 +319,11 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
                     //settiamo schedaStored a true
 
                     schedaStored = true;
-                    schede.pop_back();
+                    //eliminiamo la schedaCorrente dal vettore delle schede ancora da inviare all'urna
+                    schedeDaInviare.erase(schedeDaInviare.begin()+i);
+                    //la dimensione del vettore è diminuita di uno, il prossimo elemento da leggere si
+                    //trova una posizione indietro rispetto a prima di eseguire l'operazione appena precedente
+                    i--;
                 }
                 else{
                     cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
@@ -301,13 +333,14 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
                 emit urnaNonRaggiungibile();
                 this->setStatoPV(statiPV::offline);
                 urnaUnreachable = true;
+                delete pv_client;
+                //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna
+                //e non sarebbe possibile inviare le schede di voto non ancora trasmesse
+                //le schede di voto restanti sono attualmente salvate nel vettore delle schedeDaInviare
+                return;
             }
             delete pv_client;
-
-
         }
-
-
     }
 
 
@@ -779,4 +812,22 @@ unsigned int PostazioneVoto::getTipoElettore() const
 void PostazioneVoto::setTipoElettore(unsigned int value)
 {
     tipoElettore = value;
+}
+
+void PostazioneVoto::tryConnectUrna()
+{
+    SSLClient * pv_client = new SSLClient(this);
+
+    if(pv_client->connectTo(ipUrna)!=nullptr){
+        if(attivata){
+            emit stateChange(statiPV::libera);
+        }
+        else{
+            emit stateChange(statiPV::attesa_attivazione);
+        }
+    }
+    else{
+        emit urnaNonRaggiungibile();
+    }
+    delete pv_client;
 }

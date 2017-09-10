@@ -228,7 +228,6 @@ void MainWindowPV::updateInterfaccia(unsigned int statoPV){
     case pv->statiPV::votazione_completata:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::votoInviato);
         break;
-    case pv->statiPV::errore:
     case pv->statiPV::offline:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::errore_offline);
         break;

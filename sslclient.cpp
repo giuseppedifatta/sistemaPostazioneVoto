@@ -690,6 +690,42 @@ bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc
     return inviata;
 }
 
+bool SSLClient::setVoted(uint matricola)
+{
+    //richiesta servizio
+    int serviceCod = serviziUrna::setMatricolaVoted;
+    stringstream ssCod;
+    ssCod << serviceCod;
+    string strCod = ssCod.str();
+    const char * charCod = strCod.c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+    pvChiamante->mutex_stdout.unlock();
+
+    bool setted = false;
+
+    //invia matricola
+
+
+    //ricevi esito operazione
+
+    return setted;
+}
+
+void SSLCLient::sendCodConnection(){
+    //richiesta servizio
+    int serviceCod = serviziUrna::checkConnection;
+    stringstream ssCod;
+    ssCod << serviceCod;
+    string strCod = ssCod.str();
+    const char * charCod = strCod.c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+    pvChiamante->mutex_stdout.unlock();
+
+    bool setted = false;
+}
+
 int SSLClient::receiveString_SSL(SSL* ssl, string &s){
 
     char dim_string[16];

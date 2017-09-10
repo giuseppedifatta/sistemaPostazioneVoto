@@ -53,11 +53,12 @@ public:
         //infoProcedura, //seggio
         //infoSessione, //seggio
         //risultatiVoto, //seggio
-        invioSchedeCompilate = 5//, //postazionevoto
+        invioSchedeCompilate = 5, //postazionevoto
         //scrutinio, //responsabile procedimento
         //autenticazioneTecnico, //sistema tecnico
         //autenticazioneRP, //responsabile procedimento
-
+        setMatricolaVoted = 10,
+        checkConnection = 11
     };
 
     //operazioni del client
@@ -70,6 +71,8 @@ public:
     //verso Urna
     bool attivaPostazioneVoto(string sessionKey);
     bool inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac);
+    bool setVoted(uint matricola);
+    void sendCodConnection();
 
     //verso OTPServerProvider
 };

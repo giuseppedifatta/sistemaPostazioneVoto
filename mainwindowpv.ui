@@ -84,7 +84,7 @@ background-color: white;
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="attivazione_page">
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -109,7 +109,7 @@ background-color: white;
               <item row="0" column="0">
                <widget class="QLabel" name="passwordPV_label">
                 <property name="text">
-                 <string>Password PV n.1</string>
+                 <string>Session key PV n.</string>
                 </property>
                </widget>
               </item>
@@ -146,16 +146,16 @@ background-color: white;
              <number>50</number>
             </property>
             <item>
-             <widget class="QPushButton" name="attiva_button">
+             <widget class="QPushButton" name="exit_button">
               <property name="text">
-               <string>Attiva</string>
+               <string>Exit</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="exit_button">
+             <widget class="QPushButton" name="attiva_button">
               <property name="text">
-               <string>Exit</string>
+               <string>Attiva</string>
               </property>
              </widget>
             </item>
@@ -373,6 +373,17 @@ background-color: white;
          <widget class="QLabel" name="riconsegnareHT_label">
           <property name="text">
            <string>Riconsegnare l'hardware token alla commissione!</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="offline_page">
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>La postazione è offline, non è in grado di comunicare con l'Urna</string>
           </property>
          </widget>
         </item>

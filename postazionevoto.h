@@ -76,7 +76,6 @@ public:
         attesa_abilitazione,
         votazione_in_corso,
         votazione_completata,
-        errore,
         offline
     };
     void setStatoPV(statiPV nuovoStato);
@@ -105,8 +104,12 @@ public:
 
     unsigned int getTipoElettore() const;
     void setTipoElettore(unsigned int value);
+    void tryConnectUrna();
+    uint getMatricolaVotante() const;
+    void setMatricolaVotante(const uint &value);
 
 private:
+    bool attivata;
     const char * ipUrna;
     const char * postazioneSeggio;
     //dati membro
@@ -122,7 +125,7 @@ private:
 
     string usernameHTAssociato;
     uint matricolaVotante;
-    //vector <SchedaCompilata> schedeDaInviare;
+    vector <SchedaCompilata> schedeDaInviare;
     //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
     unsigned int symKeyAES; //chiave per la cifratura simmetrica, non di tipo uint

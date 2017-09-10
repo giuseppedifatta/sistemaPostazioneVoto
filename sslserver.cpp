@@ -248,14 +248,16 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         ruoloVotante = atoi(strRuolo.c_str());
         pvChiamante->setTipoElettore(ruoloVotante);
 
-        //TODO ricevi matricola votante
+        //ricevi matricola votante
+        string strMatricola;
+        receiveString_SSL(ssl,strMatricola);
+
 
         if(pvChiamante->setHTAssociato(idHT)){ //restituisce true se l'esito dell'operazione è positivo
             success = 0;
+            pvChiamante->setMatricolaVotante(atoi(strMatricola.c_str()));
             pvChiamante->setStatoPV(pvChiamante->statiPV::attesa_abilitazione);
         }
-
-
 
         //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
         stringstream ss;
@@ -281,15 +283,19 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         cout << "ServerPV: statoPV richiesto dal seggio: " << charArray_statoPV << endl;
         pvChiamante->mutex_stdout.unlock();
 
-
         SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
+
+       uint stato = atoi(charArray_statoPV);
+        if(stato == pvChiamante->statiPV::offline){
+            pvChiamante->tryConnectUrna();
+        }
         break;
     }
     case servizi::removeAssociation:{
         int success = -1;
         if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione)
-                || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore) ){
+                || (pvChiamante->getStatoPV() == pvChiamante->statiPV::offline) ){
             //imposta stato postazione a libera
 
             pvChiamante->resetHT();
