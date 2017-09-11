@@ -220,12 +220,12 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
     //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
     SSLClient * pv_client1 = new SSLClient(this);
-
+    bool matricolaSettedVoted = false;
     if(pv_client1->connectTo(ipUrna)!=nullptr){
 
         if(pv_client1->setVoted(matricolaVotante)){
-                cout << "l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
-
+            cout << "l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
+            matricolaSettedVoted = true;
         }
         else{
             cerr << "impossibile comunicare esito della votazione all'urna" << endl;
@@ -241,7 +241,10 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
     }
     delete pv_client1;
 
-
+    if(!matricolaSettedVoted){
+        cerr << "Errore nella registrazione del voto per la matricola: " << matricolaVotante << endl;
+        this->setStatoPV(statiPV::errore);
+    }
 
     for(uint i = 0; i < schedeDaInviare.size(); i++){
         bool schedaStored = false;
@@ -274,6 +277,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
 
         bool urnaUnreachable = false;
         while (!schedaStored && !urnaUnreachable){
+
             //generazione nonce
 
             Integer randomUint(rng,32);
@@ -311,7 +315,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
             SSLClient * pv_client = new SSLClient(this);
 
             if(pv_client->connectTo(ipUrna)!=nullptr){
-
+                QThread::msleep(100);
                 if(pv_client->inviaSchedaCompilata(schedaStr,encryptedKey, encryptedIV,std::to_string(nonce),macPacchettoVoto)){
 
                     //se il mac ricevuto dall'urna è univoco rispetto al db,
@@ -349,6 +353,27 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
     cout << "tutte le schede sono state consegnate all'urna virtuale" << endl;
     //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
     setStatoPV(statiPV::votazione_completata);
+}
+
+void PostazioneVoto::tryConnectUrna()
+{
+    SSLClient * pv_client = new SSLClient(this);
+
+    if(pv_client->connectTo(ipUrna)!=nullptr){
+
+
+        pv_client->sendCodConnection();
+        if(attivata){
+            setStatoPV(statiPV::libera);
+        }
+        else{
+            setStatoPV(statiPV::attesa_attivazione);
+        }
+    }
+    else{
+        emit urnaNonRaggiungibile();
+    }
+    delete pv_client;
 }
 
 void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv){
@@ -814,20 +839,13 @@ void PostazioneVoto::setTipoElettore(unsigned int value)
     tipoElettore = value;
 }
 
-void PostazioneVoto::tryConnectUrna()
-{
-    SSLClient * pv_client = new SSLClient(this);
 
-    if(pv_client->connectTo(ipUrna)!=nullptr){
-        if(attivata){
-            emit stateChange(statiPV::libera);
-        }
-        else{
-            emit stateChange(statiPV::attesa_attivazione);
-        }
-    }
-    else{
-        emit urnaNonRaggiungibile();
-    }
-    delete pv_client;
+uint PostazioneVoto::getMatricolaVotante() const
+{
+    return matricolaVotante;
+}
+
+void PostazioneVoto::setMatricolaVotante(const uint &value)
+{
+    matricolaVotante = value;
 }

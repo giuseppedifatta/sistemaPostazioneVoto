@@ -13,13 +13,10 @@
 #include <mutex>
 #include <thread>
 #include <sstream>
-
-#include "sslclient.h"
-#include "sslserver.h"
-#include "mainwindowpv.h"
-#include "schedavoto.h"
-#include "schedacompilata.h"
+#include <unistd.h>
 #include <iostream>
+
+
 #include "cryptopp/osrng.h"
 #include "cryptopp/cryptlib.h"
 #include "cryptopp/hmac.h"
@@ -30,11 +27,14 @@
 #include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
 #include <cryptopp/rsa.h>
-
-
-
 #include <QtCore>
 #include <QThread>
+
+#include "sslclient.h"
+#include "sslserver.h"
+#include "mainwindowpv.h"
+#include "schedavoto.h"
+#include "schedacompilata.h"
 
 using namespace std;
 using namespace tinyxml2;
@@ -76,6 +76,7 @@ public:
         attesa_abilitazione,
         votazione_in_corso,
         votazione_completata,
+        errore,
         offline
     };
     void setStatoPV(statiPV nuovoStato);

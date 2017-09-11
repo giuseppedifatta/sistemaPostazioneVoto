@@ -22,8 +22,8 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(this, SIGNAL(stopThreads()), pv, SLOT(stopServerPV()));
     QObject::connect(pv, SIGNAL(wrongPassKey()),this, SLOT(messageErrorPassword()));
     QObject::connect(this,SIGNAL(needSchede()),pv,SLOT(selectSchedeDaMostrare()));
-//    qRegisterMetaType< vector<SchedaVoto>>( "vector<SchedaVoto>" );
-//    qRegisterMetaType< vector<SchedaCompilata>>( "vector<SchedaCompilata>" );
+    //    qRegisterMetaType< vector<SchedaVoto>>( "vector<SchedaVoto>" );
+    //    qRegisterMetaType< vector<SchedaCompilata>>( "vector<SchedaCompilata>" );
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna(vector<SchedaCompilata>)));
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
@@ -100,9 +100,11 @@ void MainWindowPV::showErrorOTP()
 
 void MainWindowPV::showMessageUrnaUnreachable()
 {
-    QMessageBox msgBox(this);
-    msgBox.setInformativeText("Impossibile comunicare con l'Urna, rivolgersi alla commissione");
-    msgBox.exec();
+    if(ui->stackedWidget->currentIndex()!=InterfaccePV::offline){
+        QMessageBox msgBox(this);
+        msgBox.setInformativeText("Impossibile comunicare con l'Urna, rivolgersi alla commissione");
+        msgBox.exec();
+    }
 }
 
 
@@ -222,14 +224,14 @@ void MainWindowPV::updateInterfaccia(unsigned int statoPV){
         break;
     case pv->statiPV::votazione_in_corso:
         cout << "richiesta schede di voto" << endl;
-        emit needSchede();        
+        emit needSchede();
         ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
         break;
     case pv->statiPV::votazione_completata:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::votoInviato);
         break;
     case pv->statiPV::offline:
-        ui->stackedWidget->setCurrentIndex(InterfaccePV::errore_offline);
+        ui->stackedWidget->setCurrentIndex(InterfaccePV::offline);
         break;
     }
     cout << "View: interfaccia aggiornata" << endl;

@@ -34,7 +34,8 @@ private:
         abilitazione,
         compilazioneSchede,
         votoInviato,
-        errore_offline
+        offline,
+        errore
     };
     void mostraScheda();
 public:

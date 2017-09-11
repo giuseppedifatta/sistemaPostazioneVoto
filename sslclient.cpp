@@ -701,18 +701,27 @@ bool SSLClient::setVoted(uint matricola)
     pvChiamante->mutex_stdout.lock();
     cout << "ClientPV: richiedo il servizio: " << charCod << endl;
     pvChiamante->mutex_stdout.unlock();
+    SSL_write(ssl,charCod,strlen(charCod));
 
-    bool setted = false;
+    bool settedVoted = false;
 
     //invia matricola
-
+    sendString_SSL(ssl,to_string(matricola));
 
     //ricevi esito operazione
+    string s;
+    receiveString_SSL(ssl,s);
+    int success = atoi(s.c_str());
+    if(success==0){
+        settedVoted = true;
+    }
 
-    return setted;
+    return settedVoted;
 }
 
-void SSLCLient::sendCodConnection(){
+
+
+void SSLClient::sendCodConnection(){
     //richiesta servizio
     int serviceCod = serviziUrna::checkConnection;
     stringstream ssCod;
@@ -722,8 +731,9 @@ void SSLCLient::sendCodConnection(){
     pvChiamante->mutex_stdout.lock();
     cout << "ClientPV: richiedo il servizio: " << charCod << endl;
     pvChiamante->mutex_stdout.unlock();
+    SSL_write(ssl,charCod,strlen(charCod));
 
-    bool setted = false;
+    //nothing to do
 }
 
 int SSLClient::receiveString_SSL(SSL* ssl, string &s){
