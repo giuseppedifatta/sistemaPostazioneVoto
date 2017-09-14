@@ -532,7 +532,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     else{
         pvChiamante->setIdProceduraVoto(idProcedura);
     }
-
+    cout << "La procedura in corso ha id: " << idProcedura << endl;
     string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura));
 
     //invio MAC all'URNA
@@ -554,7 +554,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     if(bytes > 0){
         buffer[bytes] = 0;
         int result = atoi(buffer);
-
+        cout << "esito verifica MAC: " << result << endl;
         if (result == 0){
             attivata = true;
         }
@@ -563,61 +563,29 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
 
     //se l'attivazione ha avuto successo ricevo le schede dall'urna e la chiave pubblica di RP
     if(attivata){
-        //ricevo schede
-        memset(buffer, '\0', sizeof(buffer));
-        bytes = SSL_read(ssl,buffer,sizeof(buffer));
-        if(bytes > 0){
-            buffer[bytes] = 0;
-            uint numSchede = atoi(buffer);
-            cout << "Numero schede da ricevere: " << numSchede << endl;
-            for(uint i = 0; i < numSchede; i++){
-                memset(buffer, '\0', sizeof(buffer));
-                bytes = SSL_read(ssl,buffer,sizeof(buffer));
-                if(bytes > 0){
-                    buffer[bytes] = 0;
+        //ricevo numero schede da ricevere
+        string str;
+        receiveString_SSL(ssl,str);
+        uint numSchede = atoi(str.c_str());
+        cout << "Numero schede da ricevere: " << numSchede << endl;
 
-                    //lunghezza fileScheda da ricevere
-                    uint length = atoi(buffer);
-                    char fileScheda[length+1];
-                    memset(fileScheda, '\0', sizeof(fileScheda));
-                    bytes = SSL_read(ssl,fileScheda,sizeof(fileScheda));
-                    if(bytes > 0){
-                        fileScheda[bytes] = 0;
-                        string scheda = fileScheda;
-                        cout << scheda << endl;
-                        pvChiamante->addScheda(scheda);
-                        cout << "scheda " << i+1 << " ricevuta" << endl;
-                    }
-                    else{
-                        cerr << "scheda " << i+1 << " non ricevuta" << endl;
-                    }
-                }
-                else{
-                    cerr << "errore nella ricezione della lunghezza della scheda da ricevere" << endl;
-                }
-            }
-        }
-        else{
-            cerr << "ClientPV: schede di voto non ricevute" << endl;
+        //ricevo schede
+        for(uint i = 0; i< numSchede; i++){
+
+            string scheda;
+            receiveString_SSL(ssl, scheda);
+            cout << scheda << endl;
+            pvChiamante->addScheda(scheda);
+            cout << "scheda " << i+1 << " ricevuta" << endl;
         }
 
         //ricevo chiave pubblica RP
-        memset(buffer, '\0', sizeof(buffer));
-        bytes = SSL_read(ssl,buffer,sizeof(buffer));
-        if(bytes > 0){
-            buffer[bytes] = 0;
-            uint lunghezzaPublicKey = atoi(buffer);
-            char bufferKey[lunghezzaPublicKey+1];
-            bytes = SSL_read(ssl,bufferKey,sizeof(bufferKey));
-            if(bytes > 0){
-                bufferKey[bytes]=0;
-                string publicKey = bufferKey;
-                cout << "publicKey RP: " << publicKey << endl;
-                pvChiamante->setRSAPublicKeyRP(publicKey);
-            }
-        }
-    }
+        string publicKey;
+        receiveString_SSL(ssl,publicKey);
+        cout << "publicKey RP: " << publicKey << endl;
+        pvChiamante->setRSAPublicKeyRP(publicKey);
 
+    }
     return attivata;
 }
 
@@ -636,40 +604,19 @@ bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio scheda cifrata
-    int length1 = strlen(schedaCifrata.c_str());
-    string length_str1 = std::to_string(length1);
-    const char *num_bytes1 = length_str1.c_str();
-    SSL_write(ssl, num_bytes1, strlen(num_bytes1));
-    SSL_write(ssl, schedaCifrata.c_str(), length1);
+    sendString_SSL(ssl,schedaCifrata);
 
     //invio kc
-    int length2 = strlen(kc.c_str());
-    string length_str2 = std::to_string(length2);
-    const char *num_bytes2 = length_str2.c_str();
-    SSL_write(ssl, num_bytes2, strlen(num_bytes2));
-    SSL_write(ssl, kc.c_str(), length2);
+    sendString_SSL(ssl,kc);
 
     //invio ivc
-    int length3 = strlen(ivc.c_str());
-    string length_str3 = std::to_string(length3);
-    const char *num_bytes3 = length_str3.c_str();
-    SSL_write(ssl, num_bytes3, strlen(num_bytes3));
-    SSL_write(ssl, ivc.c_str(), length3);
+    sendString_SSL(ssl,ivc);
 
     //invio nonce
-    int length4 = strlen(nonce.c_str());
-    string length_str4 = std::to_string(length4);
-    const char *num_bytes4 = length_str4.c_str();
-    SSL_write(ssl, num_bytes4, strlen(num_bytes4));
-    SSL_write(ssl, nonce.c_str(), length4);
-
+    sendString_SSL(ssl,nonce);
 
     //invio mac
-    int length5 = strlen(mac.c_str());
-    string length_str5 = std::to_string(length5);
-    const char *num_bytes5 = length_str5.c_str();
-    SSL_write(ssl, num_bytes5, strlen(num_bytes5));
-    SSL_write(ssl, mac.c_str(), length5);
+    sendString_SSL(ssl,mac);
 
     //ricevi valore di successo della memorizzazione del voto
     // 0 -> success

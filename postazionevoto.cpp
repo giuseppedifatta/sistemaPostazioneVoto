@@ -213,10 +213,7 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
     //di cui cifrare i campi contenenti i candidati votati e
     //quindi invia uno per volta i file all'urna
 
-    //salvo temporaneamente le schede sulla postazione di voto
-    for (uint i = 0; i< schede.size(); i++){
-        schedeDaInviare.push_back(schede.at(i));
-    }
+
 
     //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
     SSLClient * pv_client1 = new SSLClient(this);
@@ -244,9 +241,17 @@ void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
     if(!matricolaSettedVoted){
         cerr << "Errore nella registrazione del voto per la matricola: " << matricolaVotante << endl;
         this->setStatoPV(statiPV::errore);
+        return;
     }
 
+    //salvo temporaneamente le schede sulla postazione di voto
+    for (uint i = 0; i< schede.size(); i++){
+        schedeDaInviare.push_back(schede.at(i));
+    }
+    cout << "Schede da inviare: " << schedeDaInviare.size() << endl;
+
     for(uint i = 0; i < schedeDaInviare.size(); i++){
+        cout << "Schede pendenti: " << schedeDaInviare.size() << endl;
         bool schedaStored = false;
         //generazione chiave simmetrica e iv
         AutoSeededRandomPool rng;
@@ -574,25 +579,25 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
 
 
-    string macCalculated, encoded;
+    //string encoded;
 
     /*********************************\
     \*********************************/
 
-    // Pretty print key
-    encoded.clear();
-    StringSource(key, key.size(), true,
-                 new HexEncoder(
-                     new StringSink(encoded)
-                     ) // HexEncoder
-                 ); // StringSource
-    cout << "key encoded: " << encoded << endl;
+//    // Pretty print key
+//    encoded.clear();
+//    StringSource(key, key.size(), true,
+//                 new HexEncoder(
+//                     new StringSink(encoded)
+//                     ) // HexEncoder
+//                 ); // StringSource
+//    cout << "key encoded: " << encoded << endl;
 
-    cout << "plain text: " << plainText << endl;
+//    cout << "plain text: " << plainText << endl;
 
     /*********************************\
     \*********************************/
-
+    string macCalculated;
     try
     {
         CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
@@ -621,7 +626,7 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
                  ); // StringSource
     cout << "hmac encoded: " << macEncoded << endl;
 
-    verifyMAC(encodedSessionKey,plainText, macEncoded);
+    //verifyMAC(encodedSessionKey,plainText, macEncoded);
 
     return macEncoded;
 }
@@ -827,6 +832,8 @@ void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
 
     StringSource ss(decodedPublicKey,true /*pumpAll*/);
     rsaPublicKeyRP.Load(ss);
+
+    cout << "PV: la chiave publica di RP è stata salvata sulla postazione" << endl;
 }
 
 unsigned int PostazioneVoto::getTipoElettore() const
