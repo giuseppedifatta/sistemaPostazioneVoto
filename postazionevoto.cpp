@@ -207,157 +207,309 @@ void PostazioneVoto::selectSchedeDaMostrare()
     emit giveSchedeToView(schedeDaMostrare);
 }
 
-void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
-{
+//void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
+//{
+//    // con i dati della schede compilate, per ogni scheda crea un file xml
+//    //di cui cifrare i campi contenenti i candidati votati e
+//    //quindi invia uno per volta i file all'urna
+
+
+
+//    //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
+//    SSLClient * pv_client1 = new SSLClient(this);
+//    bool matricolaSettedVoted = false;
+//    if(pv_client1->connectTo(ipUrna)!=nullptr){
+
+//        if(pv_client1->setVoted(matricolaVotante)){
+//            cout << "l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
+//            matricolaSettedVoted = true;
+//        }
+//        else{
+//            cerr << "impossibile comunicare esito della votazione all'urna" << endl;
+//        }
+
+//    }
+//    else{
+//        emit urnaNonRaggiungibile();
+//        this->setStatoPV(statiPV::offline);
+//        delete pv_client1;
+//        //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
+//        //le schede di voto, sono attualmente salvate nel vettore delle schedeDaInviare
+//        return;
+//    }
+//    delete pv_client1;
+
+//    if(!matricolaSettedVoted){
+//        cerr << "Errore nella registrazione del voto per la matricola: " << matricolaVotante << endl;
+//        this->setStatoPV(statiPV::errore);
+//        return;
+//    }
+
+//    //salvo temporaneamente le schede sulla postazione di voto
+//    for (uint i = 0; i< schede.size(); i++){
+//        schedeDaInviare.push_back(schede.at(i));
+//    }
+//    cout << "Schede da inviare: " << schedeDaInviare.size() << endl;
+
+//    for(uint i = 0; i < schedeDaInviare.size(); i++){
+//        cout << "Schede pendenti: " << schedeDaInviare.size() << endl;
+//        bool schedaStored = false;
+//        //generazione chiave simmetrica e iv
+//        AutoSeededRandomPool rng;
+
+//        // chiave simmetrica
+//        SecByteBlock key( AES::MAX_KEYLENGTH );
+//        rng.GenerateBlock( key, key.size() );
+
+
+//        //initial value
+//        SecByteBlock iv(AES::MAX_KEYLENGTH);
+//        rng.GenerateBlock( iv, iv.size() );
+
+//        //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
+//        XMLDocument xmlDoc;
+//        creaSchedaCompilataXML_AES(&xmlDoc,schedeDaInviare.at(i),key,iv);
+
+//        //cifratura chiave simmetrica e iv con chiave pubblica di RP
+//        cout << "cifro Key e IV " << endl;
+//        string encryptedKey = encryptRSA_withPublickKeyRP(key);
+//        cout << "encrypted key: " << encryptedKey << endl;
+//        string encryptedIV = encryptRSA_withPublickKeyRP(iv);
+//        cout << "encrypted IV: " << encryptedIV << endl;
+
+
+//        //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
+//        //        string encryptedIV = std::string(reinterpret_cast<const char*>(iv.data()), iv.size());
+
+//        bool urnaUnreachable = false;
+//        while (!schedaStored && !urnaUnreachable){
+
+//            //generazione nonce
+
+//            Integer randomUint(rng,32);
+//            std::stringstream ss;
+//            ss << randomUint;
+//            std::string s(ss.str());
+//            uint nonce = atoi(s.c_str());
+
+//            cout << "nonce: " << nonce << endl;
+
+//            //cifratura nonce
+//            string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
+
+//            //sostituzione nonce nel file xml
+//            XMLNode *rootNode = xmlDoc.FirstChild();
+
+//            rootNode->FirstChildElement("nonce")->SetText(encryptedNonce.c_str());
+
+
+//            //print file xml della scheda to string
+//            XMLPrinter printer;
+//            xmlDoc.Print( &printer );
+//            string schedaStr = printer.CStr();
+//            cout << schedaStr << endl;
+
+//            //generazione mac
+//            //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
+//            //chiave per HAMC: chiave di sessione tra pv e urna
+//            string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
+//            cout << "Dati di cui calcolare il mac: " << datiConcatenati << endl;
+
+//            string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
+
+//            //invio pacchetto di voto all'urna
+//            SSLClient * pv_client = new SSLClient(this);
+
+//            if(pv_client->connectTo(ipUrna)!=nullptr){
+//                QThread::msleep(100);
+//                if(pv_client->inviaSchedaCompilata(schedaStr,encryptedKey, encryptedIV,std::to_string(nonce),macPacchettoVoto)){
+
+//                    //se il mac ricevuto dall'urna è univoco rispetto al db,
+//                    //la memorizzazione del voto andrà a buon fine
+//                    //settiamo schedaStored a true
+
+//                    schedaStored = true;
+//                    //eliminiamo la schedaCorrente dal vettore delle schede ancora da inviare all'urna
+//                    schedeDaInviare.erase(schedeDaInviare.begin()+i);
+//                    //la dimensione del vettore è diminuita di uno, il prossimo elemento da leggere si
+//                    //trova una posizione indietro rispetto a prima di eseguire l'operazione appena precedente
+//                    i--;
+//                }
+//                else{
+//                    cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
+//                }
+//            }
+//            else{
+//                emit urnaNonRaggiungibile();
+//                this->setStatoPV(statiPV::offline);
+//                urnaUnreachable = true;
+//                delete pv_client;
+//                //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna
+//                //e non sarebbe possibile inviare le schede di voto non ancora trasmesse
+//                //le schede di voto restanti sono attualmente salvate nel vettore delle schedeDaInviare
+//                return;
+//            }
+//            delete pv_client;
+//        }
+//    }
+
+
+//    //tutte le schede votate sono state recapitate correttamente nell'urna
+
+//    cout << "tutte le schede sono state consegnate all'urna virtuale" << endl;
+//    //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
+//    setStatoPV(statiPV::votazione_completata);
+//}
+
+void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
     // con i dati della schede compilate, per ogni scheda crea un file xml
     //di cui cifrare i campi contenenti i candidati votati e
     //quindi invia uno per volta i file all'urna
 
+    bool inviati = false;
+    bool erroreInvio = false;
+    bool postazioneOffline = false;
+
+    SSLClient * pv_client = new SSLClient(this);
+
+    //mi collego all'urna
+    if(pv_client->connectTo(ipUrna)!=nullptr){
+
+        uint numSchede = schede.size();
+        cout << "Schede da inviare: " << numSchede << endl;
+
+        //1. richiedo il servizio di invio voti
+        pv_client->richiestaServizioInvioSchede(numSchede);
 
 
-    //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
-    SSLClient * pv_client1 = new SSLClient(this);
-    bool matricolaSettedVoted = false;
-    if(pv_client1->connectTo(ipUrna)!=nullptr){
+        //per ogni scheda eseguo l'invio
 
-        if(pv_client1->setVoted(matricolaVotante)){
-            cout << "l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
-            matricolaSettedVoted = true;
-        }
-        else{
-            cerr << "impossibile comunicare esito della votazione all'urna" << endl;
-        }
-    }
-    else{
-        emit urnaNonRaggiungibile();
-        this->setStatoPV(statiPV::offline);
-        delete pv_client1;
-        //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
-        //le schede di voto, sono attualmente salvate nel vettore delle schedeDaInviare
-        return;
-    }
-    delete pv_client1;
-
-    if(!matricolaSettedVoted){
-        cerr << "Errore nella registrazione del voto per la matricola: " << matricolaVotante << endl;
-        this->setStatoPV(statiPV::errore);
-        return;
-    }
-
-    //salvo temporaneamente le schede sulla postazione di voto
-    for (uint i = 0; i< schede.size(); i++){
-        schedeDaInviare.push_back(schede.at(i));
-    }
-    cout << "Schede da inviare: " << schedeDaInviare.size() << endl;
-
-    for(uint i = 0; i < schedeDaInviare.size(); i++){
-        cout << "Schede pendenti: " << schedeDaInviare.size() << endl;
-        bool schedaStored = false;
-        //generazione chiave simmetrica e iv
-        AutoSeededRandomPool rng;
-
-        // chiave simmetrica
-        SecByteBlock key( AES::MAX_KEYLENGTH );
-        rng.GenerateBlock( key, key.size() );
+        for(uint i = 0; i < schede.size(); i++){
 
 
-        //initial value
-        SecByteBlock iv(AES::MAX_KEYLENGTH);
-        rng.GenerateBlock( iv, iv.size() );
+            //generazione chiave simmetrica e iv
+            AutoSeededRandomPool rng;
 
-        //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
-        XMLDocument xmlDoc;
-        creaSchedaCompilataXML_AES(&xmlDoc,schedeDaInviare.at(i),key,iv);
-
-        //cifratura chiave simmetrica e iv con chiave pubblica di RP
-        cout << "cifro Key e IV " << endl;
-        string encryptedKey = encryptRSA_withPublickKeyRP(key);
-        cout << "encrypted key: " << encryptedKey << endl;
-        string encryptedIV = encryptRSA_withPublickKeyRP(iv);
-        cout << "encrypted IV: " << encryptedIV << endl;
+            // chiave simmetrica
+            SecByteBlock key( AES::MAX_KEYLENGTH );
+            rng.GenerateBlock( key, key.size() );
 
 
-        //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
-        //        string encryptedIV = std::string(reinterpret_cast<const char*>(iv.data()), iv.size());
+            //initial value
+            SecByteBlock iv(AES::MAX_KEYLENGTH);
+            rng.GenerateBlock( iv, iv.size() );
 
-        bool urnaUnreachable = false;
-        while (!schedaStored && !urnaUnreachable){
+            //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
+            XMLDocument xmlDoc;
+            creaSchedaCompilataXML_AES(&xmlDoc,schede.at(i),key,iv);
 
-            //generazione nonce
+            //cifratura chiave simmetrica e iv con chiave pubblica di RP
+            cout << "cifro Key e IV " << endl;
+            string encryptedKey = encryptRSA_withPublickKeyRP(key);
+            cout << "encrypted key: " << encryptedKey << endl;
+            string encryptedIV = encryptRSA_withPublickKeyRP(iv);
+            cout << "encrypted IV: " << encryptedIV << endl;
 
-            Integer randomUint(rng,32);
-            std::stringstream ss;
-            ss << randomUint;
-            std::string s(ss.str());
-            uint nonce = atoi(s.c_str());
+            //2. invio delle chiavi di cifratura della scheda
+            pv_client->invioChiavi(encryptedKey, encryptedIV);
 
-            cout << "nonce: " << nonce << endl;
+            bool schedaStored = false;
+            //3. invio scheda
+            while (!schedaStored){
+                cout << "invio scheda: " << i+1 << endl;
+                //generazione nonce
 
-            //cifratura nonce
-            string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
+                Integer randomUint(rng,32);
+                std::stringstream ss;
+                ss << randomUint;
+                std::string s(ss.str());
+                uint nonce = atoi(s.c_str());
 
-            //sostituzione nonce nel file xml
-            XMLNode *rootNode = xmlDoc.FirstChild();
+                cout << "nonce: " << nonce << endl;
 
-            rootNode->FirstChildElement("nonce")->SetText(encryptedNonce.c_str());
+                //cifratura nonce
+                string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
+
+                //aggiungo o sostituisco nonce nel file xml
+                XMLNode *rootNode = xmlDoc.FirstChild();
+
+                //il campo nonce, in fase di creazione scheda viene lasciato vuoto, qui inseriamo il valore
+                rootNode->FirstChildElement("nonce")->SetText(encryptedNonce.c_str());
 
 
-            //print file xml della scheda to string
-            XMLPrinter printer;
-            xmlDoc.Print( &printer );
-            string schedaStr = printer.CStr();
-            cout << schedaStr << endl;
+                //print file xml della scheda to string
+                XMLPrinter printer;
+                xmlDoc.Print( &printer );
+                string schedaStr = printer.CStr();
+                cout << schedaStr << endl;
 
-            //generazione mac
-            //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
-            //chiave per HAMC: chiave di sessione tra pv e urna
-            string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
-            cout << "Dati di cui calcolare il mac: " << datiConcatenati << endl;
+                //generazione mac
+                //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
+                //chiave per HAMC: chiave di sessione tra pv e urna
+                string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
+                cout << "Dati di cui calcolare il mac: " << datiConcatenati << endl;
 
-            string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
+                string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
-            //invio pacchetto di voto all'urna
-            SSLClient * pv_client = new SSLClient(this);
 
-            if(pv_client->connectTo(ipUrna)!=nullptr){
-                QThread::msleep(100);
-                if(pv_client->inviaSchedaCompilata(schedaStr,encryptedKey, encryptedIV,std::to_string(nonce),macPacchettoVoto)){
+
+                if(pv_client->inviaSchedaWithoutKeys(schedaStr,std::to_string(nonce),macPacchettoVoto)){
 
                     //se il mac ricevuto dall'urna è univoco rispetto al db,
                     //la memorizzazione del voto andrà a buon fine
                     //settiamo schedaStored a true
 
                     schedaStored = true;
-                    //eliminiamo la schedaCorrente dal vettore delle schede ancora da inviare all'urna
-                    schedeDaInviare.erase(schedeDaInviare.begin()+i);
-                    //la dimensione del vettore è diminuita di uno, il prossimo elemento da leggere si
-                    //trova una posizione indietro rispetto a prima di eseguire l'operazione appena precedente
-                    i--;
+
                 }
                 else{
                     cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
                 }
-            }
-            else{
-                emit urnaNonRaggiungibile();
-                this->setStatoPV(statiPV::offline);
-                urnaUnreachable = true;
-                delete pv_client;
-                //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna
-                //e non sarebbe possibile inviare le schede di voto non ancora trasmesse
-                //le schede di voto restanti sono attualmente salvate nel vettore delle schedeDaInviare
-                return;
-            }
-            delete pv_client;
+            }//while
+
         }
+
+        //comunicazione matricola e conferma esito positivo di ricezione schede
+
+        if(pv_client->sendMatricolaAndConfirmStored(matricolaVotante)){
+            inviati = true;
+        }
+        else{
+            erroreInvio = true;
+        }
+    }//if connect
+
+
+    else{ //else connect
+        emit urnaNonRaggiungibile();
+
+        postazioneOffline = true;
+        //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
+        //le schede di voto, sono attualmente salvate nel vettore delle schedeDaInviare
+
     }
+    delete pv_client;
 
 
-    //tutte le schede votate sono state recapitate correttamente nell'urna
+
 
     cout << "tutte le schede sono state consegnate all'urna virtuale" << endl;
-    //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
-    setStatoPV(statiPV::votazione_completata);
+    //settiamo lo stato della postazione in base all'esito dell'operazione
+    if(inviati){
+        //tutte le schede votate sono state recapitate correttamente nell'urna
+        cout << "TUTTE LE SCHEDE INVIATE!!!" << endl;
+        setStatoPV(statiPV::votazione_completata);
+        return;
+    }
+   if(postazioneOffline){
+
+        setStatoPV(statiPV::offline);
+        return;
+    }
+    if(erroreInvio){
+        setStatoPV(statiPV::errore);
+        return;
+    }
 }
 
 void PostazioneVoto::tryConnectUrna()
@@ -582,21 +734,21 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     //string encoded;
 
     /*********************************\
-    \*********************************/
+                    \*********************************/
 
-//    // Pretty print key
-//    encoded.clear();
-//    StringSource(key, key.size(), true,
-//                 new HexEncoder(
-//                     new StringSink(encoded)
-//                     ) // HexEncoder
-//                 ); // StringSource
-//    cout << "key encoded: " << encoded << endl;
+    //    // Pretty print key
+    //    encoded.clear();
+    //    StringSource(key, key.size(), true,
+    //                 new HexEncoder(
+    //                     new StringSink(encoded)
+    //                     ) // HexEncoder
+    //                 ); // StringSource
+    //    cout << "key encoded: " << encoded << endl;
 
-//    cout << "plain text: " << plainText << endl;
+    //    cout << "plain text: " << plainText << endl;
 
     /*********************************\
-    \*********************************/
+                    \*********************************/
     string macCalculated;
     try
     {
@@ -615,7 +767,7 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     }
 
     /*********************************\
-    \*********************************/
+                    \*********************************/
 
     // Pretty print MAC
     string macEncoded;

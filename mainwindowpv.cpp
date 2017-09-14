@@ -25,7 +25,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     //    qRegisterMetaType< vector<SchedaVoto>>( "vector<SchedaVoto>" );
     //    qRegisterMetaType< vector<SchedaCompilata>>( "vector<SchedaCompilata>" );
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
-    QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna(vector<SchedaCompilata>)));
+    QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna2(vector<SchedaCompilata>)));//secondo metodo di invio settato come risposta al signal di invio
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
     QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showMessageUrnaUnreachable()));
     //avvio il thread del model

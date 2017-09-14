@@ -59,10 +59,11 @@ public slots:
 
     void stopServerPV();
     void selectSchedeDaMostrare();
-    void inviaVotiToUrna(vector <SchedaCompilata> schede);
+    //void inviaVotiToUrna(vector <SchedaCompilata> schede);
     void validatePassKey(QString pass);
     void validateOTP(QString otp);
 
+    void inviaVotiToUrna2(vector<SchedaCompilata> schede);
 public:
     explicit PostazioneVoto(QObject *parent = 0);
     virtual ~PostazioneVoto();
@@ -165,16 +166,11 @@ protected:
 
     unsigned int getIdPostazioneVoto();
 
-
-
     //metodi per la cifratura del voto
 
     void pubEncrypt_publicKeyRP(unsigned int symKey, unsigned int iv);
 
-    //calcola il digest sui dati in ingresso, lo firma(cio� lo cifra con la chiave privata), restituisce il digest firmato
-    //il tipo di valore di ritorno dipende dal tipo di ritorno del metodo di firma usato
-    string firmaVC_PV(unsigned int symKey, unsigned int iv,
-                      XMLDocument schedaVotoCompilataCifrata);
+
 
     XMLDocument symEncrypt_V(XMLDocument schedaVoto);
 

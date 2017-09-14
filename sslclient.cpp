@@ -171,12 +171,31 @@ void SSLClient::init_openssl_library() {
 
     ERR_load_crypto_strings();
 
+//    /* https://www.openssl.org/docs/ssl/SSL_library_init.html */
+//    SSL_library_init();
+//    /* Cannot fail (always returns success) ??? */
 
-    /* OpenSSL_config may or may not be called internally, based on */
-    /*  some #defines and internal gyrations. Explicitly call it    */
-    /*  *IF* you need something from openssl.cfg, such as a         */
-    /*  dynamically configured ENGINE.                              */
-    //OPENSSL_config(NULL);
+//    /* https://www.openssl.org/docs/crypto/ERR_load_crypto_strings.html */
+//    SSL_load_error_strings();
+//    /* Cannot fail ??? */
+
+//    ERR_load_BIO_strings();
+//    /* SSL_load_error_strings loads both libssl and libcrypto strings */
+//    //ERR_load_crypto_strings();
+//    /* Cannot fail ??? */
+
+//    /* OpenSSL_config may or may not be called internally, based on */
+//    /*  some #defines and internal gyrations. Explicitly call it    */
+//    /*  *IF* you need something from openssl.cfg, such as a         */
+//    /*  dynamically configured ENGINE.                              */
+//    OPENSSL_config(NULL);
+
+
+//    /* OpenSSL_config may or may not be called internally, based on */
+//    /*  some #defines and internal gyrations. Explicitly call it    */
+//    /*  *IF* you need something from openssl.cfg, such as a         */
+//    /*  dynamically configured ENGINE.                              */
+//    //OPENSSL_config(NULL);
 
 }
 
@@ -589,6 +608,61 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     return attivata;
 }
 
+void SSLClient::richiestaServizioInvioSchede(uint numSchede){
+    //richiesta servizio
+    int serviceCod = serviziUrna::invioSchedeCompilate;
+    stringstream ssCod;
+    ssCod << serviceCod;
+    string strCod = ssCod.str();
+    const char * charCod = strCod.c_str();
+    pvChiamante->mutex_stdout.lock();
+    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+    pvChiamante->mutex_stdout.unlock();
+    SSL_write(ssl,charCod,strlen(charCod));
+
+    //invio del numero di schede che si vuole inviare
+    sendString_SSL(ssl,to_string(numSchede));
+}
+
+void SSLClient::invioChiavi(string encryptedKey, string encryptedIV){
+
+    sendString_SSL(ssl,encryptedKey);
+    sendString_SSL(ssl,encryptedIV);
+
+
+}
+
+bool SSLClient::inviaSchedaWithoutKeys(string schedaStr,string nonceAsString,string macPacchettoVoto){
+    //invio scheda cifata
+    sendString_SSL(ssl,schedaStr);
+
+    //invio nonce sotto forma di stringa
+    sendString_SSL(ssl,nonceAsString);
+
+
+    //invio mac generato dal pacchetto di voto
+    sendString_SSL(ssl,macPacchettoVoto);
+
+
+    //ricevi esito operazione di ricezione scheda dall'urna
+    uint esito;
+    string s;
+    receiveString_SSL(ssl,s);
+    esito = atoi(s.c_str());
+
+    if(esito == 0){
+
+        cout << "Scheda inviata correttamente, id: " << macPacchettoVoto << endl;
+        return true;
+    }
+    else{
+        cerr << "Reinvio scheda necessario" << endl;
+        return false;
+    }
+
+
+}
+
 bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac)
 {
     bool inviata = false;
@@ -635,6 +709,32 @@ bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc
     }
 
     return inviata;
+}
+
+bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
+    //invia matricola
+    sendString_SSL(ssl,to_string(matricola));
+
+    //ricevo conferma che i pacchetti statto per essere memorizzati
+    string ack;
+    receiveString_SSL(ssl,ack);
+
+    if(ack == "ACK"){
+        //invio ack di risposta
+        sendString_SSL(ssl,"ACK");
+    }
+
+    //esito operazione di invio voti
+    string s;
+    receiveString_SSL(ssl, s);
+
+    int success = atoi(s.c_str());
+
+    if(success == 0){
+        return true;
+    }
+    else
+        return false;
 }
 
 bool SSLClient::setVoted(uint matricola)

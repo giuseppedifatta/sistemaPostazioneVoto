@@ -75,6 +75,10 @@ public:
     void sendCodConnection();
 
     //verso OTPServerProvider
+    void richiestaServizioInvioSchede(uint numSchede);
+    bool sendMatricolaAndConfirmStored(uint matricola);
+    void invioChiavi(string encryptedKey, string encryptedIV);
+    bool inviaSchedaWithoutKeys(string schedaStr, string nonceAsString, string macPacchettoVoto);
 };
 
 
