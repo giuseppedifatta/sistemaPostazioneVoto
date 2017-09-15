@@ -636,15 +636,15 @@ string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecBy
     \*********************************/
 
     // Pretty print
-    encoded.clear();
+    string encodedCipher;
     StringSource(cipher, true,
                  new HexEncoder(
-                     new StringSink(encoded)
+                     new StringSink(encodedCipher)
                      ) // HexEncoder
                  ); // StringSource
-    cout << "cipher text: " << encoded << endl;
+    cout << "cipher text: " << encodedCipher << endl;
 
-    return cipher;
+    return encodedCipher;
 }
 
 string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::RSA::PublicKey publicKey)
