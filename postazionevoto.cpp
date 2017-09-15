@@ -391,12 +391,12 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
             AutoSeededRandomPool rng;
 
             // chiave simmetrica
-            SecByteBlock key( AES::MAX_KEYLENGTH );
+            SecByteBlock key( AES::MAX_KEYLENGTH ); //32 bytes
             rng.GenerateBlock( key, key.size() );
 
 
             //initial value
-            SecByteBlock iv(AES::MAX_KEYLENGTH);
+            SecByteBlock iv(AES::BLOCKSIZE);//16 bytes
             rng.GenerateBlock( iv, iv.size() );
 
             //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
@@ -405,9 +405,9 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
 
             //cifratura chiave simmetrica e iv con chiave pubblica di RP
             cout << "cifro Key e IV " << endl;
-            string encryptedKey = encryptRSA_withPublickKeyRP(key);
+            string encryptedKey = RSAencryptSecByteBlock(key,rsaPublicKeyRP);
             cout << "encrypted key: " << encryptedKey << endl;
-            string encryptedIV = encryptRSA_withPublickKeyRP(iv);
+            string encryptedIV = RSAencryptSecByteBlock(iv,rsaPublicKeyRP);
             cout << "encrypted IV: " << encryptedIV << endl;
 
             //2. invio delle chiavi di cifratura della scheda
@@ -428,7 +428,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                 cout << "nonce: " << nonce << endl;
 
                 //cifratura nonce
-                string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
+                string encryptedNonce = AESencryptStdString(std::to_string(nonce),key,iv);
 
                 //aggiungo o sostituisco nonce nel file xml
                 XMLNode *rootNode = xmlDoc.FirstChild();
@@ -501,7 +501,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
         setStatoPV(statiPV::votazione_completata);
         return;
     }
-   if(postazioneOffline){
+    if(postazioneOffline){
 
         setStatoPV(statiPV::offline);
         return;
@@ -575,69 +575,115 @@ void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCom
         XMLElement * pMatr = xmlDoc->NewElement("matricolaCandidato");
         string matricola = preferenzeMatricole.at(indexMatricole);
         //cifriamo il campo della matricola con chiave simmetrica e AES
-        string matricolaEncrypted = encryptStdString(matricola,key,iv);
+        string matricolaEncrypted = AESencryptStdString(matricola,key,iv);
         pMatr->SetText(matricolaEncrypted.c_str());
         pPreferenze->InsertEndChild(pMatr);
     }
 }
 
-string PostazioneVoto::encryptStdString(string plaintext, SecByteBlock key, SecByteBlock iv) {
+string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecByteBlock  iv) {
 
-    string ciphertext;
-    //settaggio parametri di cifratura
-    //impostazione della chiave che sarà utilizzata da AES
-    CryptoPP::AES::Encryption aesEncryption(key,AES::MAX_KEYLENGTH);
 
-    //impostazione dell'iv per il cifrario a blocchi
-    CryptoPP::CBC_Mode_ExternalCipher::Encryption cbcEncryption(aesEncryption, iv);
+    string cipher, encoded;
 
-    //impostazione variabile di destinazione del testo cifrato
-    StreamTransformationFilter stfEncryptor(cbcEncryption,new StringSink(ciphertext));
-    //cifratura del plaintext
-    stfEncryptor.Put(reinterpret_cast<const unsigned char*>(plaintext.c_str()),plaintext.length() + 1);
-    stfEncryptor.MessageEnd();
+    /*********************************\
+    \*********************************/
 
-    string encodedCiphertext;
-    StringSource(ciphertext, true,
+    // Pretty print key
+    encoded.clear();
+    StringSource(key, key.size(), true,
                  new HexEncoder(
-                     new StringSink(encodedCiphertext)
+                     new StringSink(encoded)
                      ) // HexEncoder
                  ); // StringSource
+    cout << "key: " << encoded << endl;
 
-    return encodedCiphertext;
+    // Pretty print iv
+    encoded.clear();
+    StringSource(iv,iv.size(),true,
+                 new HexEncoder(
+                     new StringSink(encoded)
+                     ) // HexEncoder
+                 ); // StringSource
+    cout << "iv: " << encoded << endl;
+
+    /*********************************\
+    \*********************************/
+
+    try
+    {
+        cout << "plain text: " << plain << endl;
+
+        CBC_Mode< AES >::Encryption aesEncryptor;
+        aesEncryptor.SetKeyWithIV(key, key.size(), iv);
+
+        // The StreamTransformationFilter removes
+        //  padding as required.
+        StringSource (plain, true,
+                      new StreamTransformationFilter(aesEncryptor,
+                                                     new StringSink(cipher)
+                                                     ) // StreamTransformationFilter
+                      ); // StringSource
+
+
+    }
+    catch(const CryptoPP::Exception& e)
+    {
+        cerr << "Caught exception :" << e.what() << endl;
+    }
+
+    /*********************************\
+    \*********************************/
+
+    // Pretty print
+    encoded.clear();
+    StringSource(cipher, true,
+                 new HexEncoder(
+                     new StringSink(encoded)
+                     ) // HexEncoder
+                 ); // StringSource
+    cout << "cipher text: " << encoded << endl;
+
+    return cipher;
 }
 
-string PostazioneVoto::encryptRSA_withPublickKeyRP(SecByteBlock value)
+string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::RSA::PublicKey publicKey)
 {
-    // Encrypt
-    RSAES_OAEP_SHA_Encryptor encryptor(rsaPublicKeyRP);
-
-    //Encrypt key
-    // Now that there is a concrete object, we can validate
-    assert(0 != encryptor.FixedMaxPlaintextLength());
-    assert(
-                CryptoPP::AES::DEFAULT_KEYLENGTH
-                <= encryptor.FixedMaxPlaintextLength());
-
-    // Create cipher key space
-    size_t ecl = encryptor.CiphertextLength(value.size());
-    assert(0 != ecl);
-
-    SecByteBlock cipherKey(ecl);
-
-    // Paydirt
+    std::string plain = std::string(reinterpret_cast<const char*>(valueBlock.data()), valueBlock.size());
     AutoSeededRandomPool rng;
-    encryptor.Encrypt(rng, value, value.size(), cipherKey);
 
-    string encryptedValue = std::string(reinterpret_cast<const char*>(cipherKey.data()), cipherKey.size());
+    string cipher;
+    cout << "plain: " << plain << endl;
 
-    string encodedEncryptedValue;
-    StringSource(encryptedValue,true,
+    try{
+    ////////////////////////////////////////////////
+    // Encryption // con la chiave pubblica di RP
+    RSAES_OAEP_SHA_Encryptor rsaEncryptor( publicKey );
+
+    StringSource( plain, true,
+                  new PK_EncryptorFilter( rng, rsaEncryptor,
+                                          new StringSink( cipher )
+                                          ) // PK_EncryptorFilter
+                  ); // StringSource
+
+    cout << "cipher:" << cipher << endl;
+    }
+    catch(const CryptoPP::Exception& e)
+    {
+        cerr << "Caught exception :" << e.what() << endl;
+    }
+    string encodedCipher;
+    StringSource(cipher,true,
                  new HexEncoder(
-                     new StringSink(encodedEncryptedValue)
-                     )
-                 );
-    return encodedEncryptedValue;
+                     new StringSink(encodedCipher)
+                     )//HexEncoder
+                 );//StringSource
+    cout << "encoded cipher: " << encodedCipher << endl;
+
+
+    // Encryption
+
+    return encodedCipher;
 }
 
 void PostazioneVoto::validatePassKey(QString pass)
@@ -715,11 +761,10 @@ void PostazioneVoto::setIdProceduraVoto(uint idProcedura){
     this->idProceduraVoto = idProcedura;
 }
 
-string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
+string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plain){
 
 
     //"11A47EC4465DD95FCD393075E7D3C4EB";
-
     cout << "Session key: " << encodedSessionKey << endl;
     string decodedKey;
     StringSource (encodedSessionKey,true,
@@ -731,30 +776,30 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
 
 
-    //string encoded;
+    string macCalculated, encoded;
 
     /*********************************\
-                    \*********************************/
+    \*********************************/
 
-    //    // Pretty print key
-    //    encoded.clear();
-    //    StringSource(key, key.size(), true,
-    //                 new HexEncoder(
-    //                     new StringSink(encoded)
-    //                     ) // HexEncoder
-    //                 ); // StringSource
-    //    cout << "key encoded: " << encoded << endl;
+    // Pretty print key
+    encoded.clear();
+    StringSource(key, key.size(), true,
+                 new HexEncoder(
+                     new StringSink(encoded)
+                     ) // HexEncoder
+                 ); // StringSource
+    cout << "key encoded: " << encoded << endl;
 
-    //    cout << "plain text: " << plainText << endl;
+    cout << "plain text: " << plain << endl;
 
     /*********************************\
-                    \*********************************/
-    string macCalculated;
+    \*********************************/
+
     try
     {
         CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
 
-        StringSource(plainText, true,
+        StringSource(plain, true,
                      new HashFilter(hmac,
                                     new StringSink(macCalculated)
                                     ) // HashFilter
@@ -762,14 +807,13 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
     }
     catch(const CryptoPP::Exception& e)
     {
-        cerr << e.what() << endl;
-
+        cerr << "Caught exception :" << e.what() << endl;
     }
 
     /*********************************\
-                    \*********************************/
+    \*********************************/
 
-    // Pretty print MAC
+    //	// Pretty print MAC
     string macEncoded;
     StringSource(macCalculated, true,
                  new HexEncoder(
@@ -778,17 +822,14 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plainText){
                  ); // StringSource
     cout << "hmac encoded: " << macEncoded << endl;
 
-    //verifyMAC(encodedSessionKey,plainText, macEncoded);
-
     return macEncoded;
 }
 
 int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEncoded){
-    int success = 0;
-    cout << "Dati da verificare: " << data << endl;
-    cout << "mac da verificare: " << macEncoded << endl;
-
+    //restituisce 0 in caso di verifica positiva
+    //restituisce 1 in caso di verifica negativa
     string decodedKey;
+    int success = 1;
     cout << "Session key: " << encodedSessionKey << endl;
 
     StringSource (encodedSessionKey,true,
@@ -797,35 +838,31 @@ int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEn
                       ) // HexDecoder
                   ); // StringSource
 
-    SecByteBlock key2(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
+    SecByteBlock key(reinterpret_cast<const byte*>(decodedKey.data()), decodedKey.size());
 
     string macDecoded;
     StringSource(macEncoded, true,
                  new HexDecoder(
                      new StringSink(macDecoded)
-                     ) // HexDecoder
+                     ) // HexEncoder
                  ); // StringSource
     cout << "hmac decoded: " << macDecoded << endl;
 
     try
     {
-        CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key2, key2.size());
+        CryptoPP::HMAC< CryptoPP::SHA256 > hmac(key, key.size());
         const int flags = HashVerificationFilter::THROW_EXCEPTION | HashVerificationFilter::HASH_AT_END;
-
 
 
         StringSource(data + macDecoded, true,
                      new HashVerificationFilter(hmac, NULL, flags)
                      ); // StringSource
-
-        cout << "Verified message" << endl;
         success = 0;
+        cout << "Verified message" << endl;
     }
     catch(const CryptoPP::Exception& e)
     {
-        success = 1;
-        cerr << e.what() << endl;
-        exit(1);
+        cerr << "Caught exception :" << e.what() << endl;
     }
     return success;
 }
@@ -966,10 +1003,7 @@ void PostazioneVoto::setSessionKey_PV_Urna(const string &value)
     sessionKey_PV_Urna = value;
 }
 
-//string PostazioneVoto::getPublicKeyRP() const
-//{
-//    return publicKeyRP;
-//}
+
 
 void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
 {

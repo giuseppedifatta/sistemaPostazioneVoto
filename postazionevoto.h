@@ -146,8 +146,8 @@ private:
 
     bool runServerPV;
     void creaSchedaCompilataXML_AES(XMLDocument *xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv);
-    string encryptStdString(string plaintext, SecByteBlock key, SecByteBlock iv);
-    string encryptRSA_withPublickKeyRP(SecByteBlock value);
+    string AESencryptStdString(string plain, SecByteBlock key, SecByteBlock iv);
+    string RSAencryptSecByteBlock(SecByteBlock valueBlock, CryptoPP::RSA::PublicKey publicKey);
     int verifyMAC(string encodedSessionKey, string data, string macEncoded);
 protected:
 
