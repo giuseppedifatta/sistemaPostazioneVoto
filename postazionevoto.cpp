@@ -429,7 +429,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
 
                 //cifratura nonce
                 string encryptedNonce = AESencryptStdString(std::to_string(nonce),key,iv);
-
+                cout << "nonce cifrato: " << encyptedNonce << endl;
                 //aggiungo o sostituisco nonce nel file xml
                 XMLNode *rootNode = xmlDoc.FirstChild();
 
@@ -459,7 +459,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                     //se il mac ricevuto dall'urna è univoco rispetto al db,
                     //la memorizzazione del voto andrà a buon fine
                     //settiamo schedaStored a true
-                    cout << "SCHEDA " <<i+1 << "MEMORIZZATA" << endl;
+                    cout << "SCHEDA " <<i+1 << " MEMORIZZATA" << endl;
                     schedaStored = true;
 
                 }
@@ -578,14 +578,16 @@ void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCom
         XMLElement * pMatr = xmlDoc->NewElement("matricolaCandidato");
         string matricola = preferenzeMatricole.at(indexMatricole);
         //cifriamo il campo della matricola con chiave simmetrica e AES
+        cout << "Matricola: " << matricola << endl;
         string matricolaEncrypted = AESencryptStdString(matricola,key,iv);
+        cout << "Matricola cifrata:" << matricolaEncrypted << endl;
         pMatr->SetText(matricolaEncrypted.c_str());
         pPreferenze->InsertEndChild(pMatr);
     }
 }
 
 string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecByteBlock  iv) {
-
+    cout << "Cifratura simmetrica AES..." << endl;
 
     string cipher, encoded;
 
@@ -615,7 +617,7 @@ string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecBy
 
     try
     {
-        cout << "plain text: " << plain << endl;
+        //cout << "plain text: " << plain << endl;
 
         CBC_Mode< AES >::Encryption aesEncryptor;
         aesEncryptor.SetKeyWithIV(key, key.size(), iv);
@@ -645,7 +647,7 @@ string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecBy
                      new StringSink(encodedCipher)
                      ) // HexEncoder
                  ); // StringSource
-    cout << "cipher text: " << encodedCipher << endl;
+    //cout << "cipher text: " << encodedCipher << endl;
 
     return encodedCipher;
 }

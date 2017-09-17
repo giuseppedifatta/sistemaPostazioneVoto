@@ -281,7 +281,10 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
         cout << "View: sto emettondo il segnale per il thread PV, il quale dovrà occuparsi dell'invio delle schede"  << endl;
 
         emit inviaSchedeCompilate(schedeCompilate);
+        schedeCompilate.clear();
     }
+
+
 }
 
 void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
