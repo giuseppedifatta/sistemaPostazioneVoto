@@ -24,10 +24,12 @@ private:
 
     unsigned int indiceSchedaDaMostrare;
     vector <SchedaCompilata> schedeCompilate;
-    uint numChecked;
+    uint numPreferenzeChecked;
     uint numPreferenzeMax;
+    //mettendo a true questa variabile, si blocca il trigger degli
+    //eventi checked e unchecked durante l'aggiunta degli elementi
+    //alla schermata di visualizzazione delle schede per il voto
     bool addingElementToListWidget;
-
     enum InterfaccePV{
         attivazione,
         disponibile,

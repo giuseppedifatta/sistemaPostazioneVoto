@@ -254,7 +254,7 @@ int SSLClient::create_socket(const char * port) {
      * create the basic TCP socket                                *
      * ---------------------------------------------------------- */
     this->server_sock = socket(AF_INET, SOCK_STREAM, 0);
-    cout << "Server_sock: " << this->server_sock << endl;
+    cout << "ClientPV: Server_sock: " << this->server_sock << endl;
 
     /* ---------------------------------------------------------- *
      * Zeroing the rest of the struct                             *
@@ -551,14 +551,14 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     else{
         pvChiamante->setIdProceduraVoto(idProcedura);
     }
-    cout << "La procedura in corso ha id: " << idProcedura << endl;
+    cout << "ClientPV: La procedura in corso ha id: " << idProcedura << endl;
     string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura));
 
     //invio MAC all'URNA
 
     const char * charIdProceduraMAC = idProceduraMAC.c_str();
     //uvChiamante->mutex_stdout.lock();
-    cout << "Invio il MAC all'Urna: " << charIdProceduraMAC << endl;
+    cout << "ClientPV: Invio il MAC all'Urna: " << charIdProceduraMAC << endl;
     //uvChiamante->mutex_stdout.unlock();
     SSL_write(ssl,charIdProceduraMAC,strlen(charIdProceduraMAC));
 
@@ -573,7 +573,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     if(bytes > 0){
         buffer[bytes] = 0;
         int result = atoi(buffer);
-        cout << "esito verifica MAC: " << result << endl;
+        cout << "ClientPV: esito verifica MAC: " << result << endl;
         if (result == 0){
             attivata = true;
         }
@@ -586,7 +586,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
         string str;
         receiveString_SSL(ssl,str);
         uint numSchede = atoi(str.c_str());
-        cout << "Numero schede da ricevere: " << numSchede << endl;
+        cout << "ClientPV: Numero schede da ricevere: " << numSchede << endl;
 
         //ricevo schede
         for(uint i = 0; i< numSchede; i++){
@@ -595,13 +595,13 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
             receiveString_SSL(ssl, scheda);
             cout << scheda << endl;
             pvChiamante->addScheda(scheda);
-            cout << "scheda " << i+1 << " ricevuta" << endl;
+            cout << "ClientPV: scheda " << i+1 << " ricevuta" << endl;
         }
 
         //ricevo chiave pubblica RP
         string publicKey;
         receiveString_SSL(ssl,publicKey);
-        cout << "publicKey RP: " << publicKey << endl;
+        cout << "ClientPV: publicKey RP: " << publicKey << endl;
         pvChiamante->setRSAPublicKeyRP(publicKey);
 
     }
@@ -626,11 +626,9 @@ void SSLClient::richiestaServizioInvioSchede(uint numSchede){
 
 void SSLClient::invioKC_IVC(string encryptedKey, string encryptedIV){
 
-    cout << "invio  eseguito" << endl;
+    cout << "ClientPV: Invio chiave cifrata e iv cifrato..." << endl;
     sendString_SSL(ssl,encryptedKey);
     sendString_SSL(ssl,encryptedIV);
-
-
 }
 
 bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,string macPacchettoVoto){
@@ -653,7 +651,7 @@ bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,stri
 
     if(esito == 0){
 
-        cout << "Scheda inviata correttamente, id: " << macPacchettoVoto << endl;
+        cout << "ClientPV: Scheda inviata correttamente, id: " << macPacchettoVoto << endl;
         return true;
     }
     else{

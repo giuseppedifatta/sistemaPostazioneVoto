@@ -221,7 +221,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
 //    if(pv_client1->connectTo(ipUrna)!=nullptr){
 
 //        if(pv_client1->setVoted(matricolaVotante)){
-//            cout << "l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
+//            cout << "PV: l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
 //            matricolaSettedVoted = true;
 //        }
 //        else{
@@ -249,10 +249,10 @@ void PostazioneVoto::selectSchedeDaMostrare()
 //    for (uint i = 0; i< schede.size(); i++){
 //        schedeDaInviare.push_back(schede.at(i));
 //    }
-//    cout << "Schede da inviare: " << schedeDaInviare.size() << endl;
+//    cout << "PV: Schede da inviare: " << schedeDaInviare.size() << endl;
 
 //    for(uint i = 0; i < schedeDaInviare.size(); i++){
-//        cout << "Schede pendenti: " << schedeDaInviare.size() << endl;
+//        cout << "PV: Schede pendenti: " << schedeDaInviare.size() << endl;
 //        bool schedaStored = false;
 //        //generazione chiave simmetrica e iv
 //        AutoSeededRandomPool rng;
@@ -271,11 +271,11 @@ void PostazioneVoto::selectSchedeDaMostrare()
 //        creaSchedaCompilataXML_AES(&xmlDoc,schedeDaInviare.at(i),key,iv);
 
 //        //cifratura chiave simmetrica e iv con chiave pubblica di RP
-//        cout << "cifro Key e IV " << endl;
+//        cout << "PV: cifro Key e IV " << endl;
 //        string encryptedKey = encryptRSA_withPublickKeyRP(key);
-//        cout << "encrypted key: " << encryptedKey << endl;
+//        cout << "PV: encrypted key: " << encryptedKey << endl;
 //        string encryptedIV = encryptRSA_withPublickKeyRP(iv);
-//        cout << "encrypted IV: " << encryptedIV << endl;
+//        cout << "PV: encrypted IV: " << encryptedIV << endl;
 
 
 //        //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
@@ -292,7 +292,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
 //            std::string s(ss.str());
 //            uint nonce = atoi(s.c_str());
 
-//            cout << "nonce: " << nonce << endl;
+//            cout << "PV: nonce: " << nonce << endl;
 
 //            //cifratura nonce
 //            string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
@@ -313,7 +313,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
 //            //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
 //            //chiave per HAMC: chiave di sessione tra pv e urna
 //            string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
-//            cout << "Dati di cui calcolare il mac: " << datiConcatenati << endl;
+//            cout << "PV: Dati di cui calcolare il mac: " << datiConcatenati << endl;
 
 //            string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
@@ -356,7 +356,7 @@ void PostazioneVoto::selectSchedeDaMostrare()
 
 //    //tutte le schede votate sono state recapitate correttamente nell'urna
 
-//    cout << "tutte le schede sono state consegnate all'urna virtuale" << endl;
+//    cout << "PV: tutte le schede sono state consegnate all'urna virtuale" << endl;
 //    //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
 //    setStatoPV(statiPV::votazione_completata);
 //}
@@ -376,7 +376,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
     if(pv_client->connectTo(ipUrna)!=nullptr){
 
         uint numSchede = schede.size();
-        cout << "Schede da inviare: " << numSchede << endl;
+        cout << "PV: Schede da inviare: " << numSchede << endl;
 
         //1. richiedo il servizio di invio voti
         pv_client->richiestaServizioInvioSchede(numSchede);
@@ -385,7 +385,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
         //per ogni scheda eseguo l'invio
 
         for(uint i = 0; i < schede.size(); i++){
-            cout << "invio pacchetto " << i+1 << endl;
+            cout << "PV: invio pacchetto " << i+1 << endl;
 
             //generazione chiave simmetrica e iv
             AutoSeededRandomPool rng;
@@ -404,11 +404,11 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
             creaSchedaCompilataXML_AES(&xmlDoc,schede.at(i),key,iv);
 
             //cifratura chiave simmetrica e iv con chiave pubblica di RP
-            cout << "cifro Key e IV " << endl;
+            cout << "PV: cifro Key e IV " << endl;
             string encryptedKey = RSAencryptSecByteBlock(key,rsaPublicKeyRP);
-            cout << "encrypted key: " << encryptedKey << endl;
+            cout << "PV: encrypted key: " << encryptedKey << endl;
             string encryptedIV = RSAencryptSecByteBlock(iv,rsaPublicKeyRP);
-            cout << "encrypted IV: " << encryptedIV << endl;
+            cout << "PV: encrypted IV: " << encryptedIV << endl;
 
             //2. invio delle chiavi di cifratura della scheda
             pv_client->invioKC_IVC(encryptedKey, encryptedIV);
@@ -416,7 +416,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
             bool schedaStored = false;
             //3. invio scheda
             while (!schedaStored){
-                cout << "Invio nonce e scheda del pacchetto: " << i+1 << endl;
+                cout << "PV: Invio nonce, scheda  e MAC del pacchetto: " << i+1 << endl;
                 //generazione nonce
 
                 Integer randomUint(rng,32);
@@ -425,11 +425,11 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                 std::string s(ss.str());
                 uint nonce = atoi(s.c_str());
 
-                cout << "nonce: " << nonce << endl;
+                cout << "PV: nonce: " << nonce << endl;
 
                 //cifratura nonce
                 string encryptedNonce = AESencryptStdString(std::to_string(nonce),key,iv);
-                cout << "nonce cifrato: " << encyptedNonce << endl;
+                cout << "PV: nonce cifrato: " << encryptedNonce << endl;
                 //aggiungo o sostituisco nonce nel file xml
                 XMLNode *rootNode = xmlDoc.FirstChild();
 
@@ -441,17 +441,17 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                 XMLPrinter printer;
                 xmlDoc.Print( &printer );
                 string schedaStr = printer.CStr();
-                cout << "Scheda compilata cifrata: " << schedaStr << endl;
+                cout << "PV: Scheda compilata cifrata: " << schedaStr << endl;
 
                 //generazione mac
                 //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
                 //chiave per HAMC: chiave di sessione tra pv e urna
                 string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
-                cout << "Dati di cui calcolare il mac: " << datiConcatenati << endl;
+                cout << "PV: Dati di cui calcolare il mac: " << datiConcatenati << endl;
 
                 string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
 
-                cout << "MAC del pacchetto di voto: " << macPacchettoVoto << endl;
+                cout << "PV: MAC del pacchetto di voto: " << macPacchettoVoto << endl;
 
 
                 if(pv_client->inviaScheda_Nonce_MAC(schedaStr,std::to_string(nonce),macPacchettoVoto)){
@@ -459,12 +459,12 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                     //se il mac ricevuto dall'urna è univoco rispetto al db,
                     //la memorizzazione del voto andrà a buon fine
                     //settiamo schedaStored a true
-                    cout << "SCHEDA " <<i+1 << " MEMORIZZATA" << endl;
+                    cout << "PV: SCHEDA " <<i+1 << " ACCETTATA DALL'URNA" << endl;
                     schedaStored = true;
 
                 }
                 else{
-                    cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
+                    cerr << "scheda non accetta dall'urna', verrà fatto un nuovo tentativo cambiando l'nonce" << endl;
                     schedaStored = false;
                 }
             }//while
@@ -472,7 +472,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
         }
 
         //comunicazione matricola e conferma esito positivo di ricezione schede
-        cout << "Comunico all'urna chi è che ha espresso il voto" << endl;
+        cout << "PV: Comunico all'urna chi è che ha espresso il voto" << endl;
         if(pv_client->sendMatricolaAndConfirmStored(matricolaVotante)){
 
             inviati = true;
@@ -496,11 +496,11 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
 
 
 
-    cout << "tutte le schede sono state consegnate all'urna virtuale" << endl;
+    cout << "PV: tutte le schede sono state consegnate all'urna virtuale" << endl;
     //settiamo lo stato della postazione in base all'esito dell'operazione
     if(inviati){
         //tutte le schede votate sono state recapitate correttamente nell'urna
-        cout << "TUTTE LE SCHEDE INVIATE!!!" << endl;
+        cout << "PV: TUTTE LE SCHEDE INVIATE!!!" << endl;
         setStatoPV(statiPV::votazione_completata);
         return;
     }
@@ -578,16 +578,16 @@ void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCom
         XMLElement * pMatr = xmlDoc->NewElement("matricolaCandidato");
         string matricola = preferenzeMatricole.at(indexMatricole);
         //cifriamo il campo della matricola con chiave simmetrica e AES
-        cout << "Matricola: " << matricola << endl;
+        cout << "PV: Matricola: " << matricola << endl;
         string matricolaEncrypted = AESencryptStdString(matricola,key,iv);
-        cout << "Matricola cifrata:" << matricolaEncrypted << endl;
+        cout << "PV: Matricola cifrata:" << matricolaEncrypted << endl;
         pMatr->SetText(matricolaEncrypted.c_str());
         pPreferenze->InsertEndChild(pMatr);
     }
 }
 
 string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecByteBlock  iv) {
-    cout << "Cifratura simmetrica AES..." << endl;
+    cout << "PV: Cifratura simmetrica AES..." << endl;
 
     string cipher, encoded;
 
@@ -601,7 +601,7 @@ string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecBy
                      new StringSink(encoded)
                      ) // HexEncoder
                  ); // StringSource
-    //cout << "key: " << encoded << endl;
+    //cout << "PV: key: " << encoded << endl;
 
     // Pretty print iv
     encoded.clear();
@@ -610,14 +610,14 @@ string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecBy
                      new StringSink(encoded)
                      ) // HexEncoder
                  ); // StringSource
-    //cout << "iv: " << encoded << endl;
+    //cout << "PV: iv: " << encoded << endl;
 
     /*********************************\
     \*********************************/
 
     try
     {
-        //cout << "plain text: " << plain << endl;
+        //cout << "PV: plain text: " << plain << endl;
 
         CBC_Mode< AES >::Encryption aesEncryptor;
         aesEncryptor.SetKeyWithIV(key, key.size(), iv);
@@ -647,7 +647,7 @@ string PostazioneVoto::AESencryptStdString(string plain, SecByteBlock key, SecBy
                      new StringSink(encodedCipher)
                      ) // HexEncoder
                  ); // StringSource
-    //cout << "cipher text: " << encodedCipher << endl;
+    //cout << "PV: cipher text: " << encodedCipher << endl;
 
     return encodedCipher;
 }
@@ -658,7 +658,7 @@ string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::
     AutoSeededRandomPool rng;
 
     string cipher;
-    //cout << "plain: " << plain << endl;
+    //cout << "PV: plain: " << plain << endl;
 
     try{
         ////////////////////////////////////////////////
@@ -671,7 +671,7 @@ string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::
                                               ) // PK_EncryptorFilter
                       ); // StringSource
 
-        //cout << "cipher:" << cipher << endl;
+        //cout << "PV: cipher:" << cipher << endl;
     }
     catch(const CryptoPP::Exception& e)
     {
@@ -683,7 +683,7 @@ string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::
                      new StringSink(encodedCipher)
                      )//HexEncoder
                  );//StringSource
-    //cout << "encoded cipher: " << encodedCipher << endl;
+    //cout << "PV: encoded cipher: " << encodedCipher << endl;
 
 
     // Encryption
@@ -744,7 +744,7 @@ void PostazioneVoto::function_thread_sendStatoToSeggio(unsigned int statoPV){
     //---bisogna comunicare alla postazione seggio che lo stato della postazione di voto X è cambiato---
     //iniziare una sessione ssl con la postazione di voto
     this->mutex_stdout.lock();
-    cout << "Dentro il thread" << endl;
+    cout << "PV: Dentro il thread" << endl;
     this->mutex_stdout.unlock();
 
 
@@ -770,7 +770,7 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plain){
 
 
     //"11A47EC4465DD95FCD393075E7D3C4EB";
-    //cout << "Session key: " << encodedSessionKey << endl;
+    //cout << "PV: Session key: " << encodedSessionKey << endl;
     string decodedKey;
     StringSource (encodedSessionKey,true,
                   new HexDecoder(
@@ -793,9 +793,9 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plain){
                      new StringSink(encoded)
                      ) // HexEncoder
                  ); // StringSource
-    //cout << "key encoded: " << encoded << endl;
+    //cout << "PV: key encoded: " << encoded << endl;
 
-    //cout << "plain text: " << plain << endl;
+    //cout << "PV: plain text: " << plain << endl;
 
     /*********************************\
     \*********************************/
@@ -825,7 +825,7 @@ string PostazioneVoto::calcolaMAC(string encodedSessionKey, string plain){
                      new StringSink(macEncoded)
                      ) // HexEncoder
                  ); // StringSource
-    //cout << "hmac encoded: " << macEncoded << endl;
+    //cout << "PV: hmac encoded: " << macEncoded << endl;
 
     return macEncoded;
 }
@@ -835,7 +835,7 @@ int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEn
     //restituisce 1 in caso di verifica negativa
     string decodedKey;
     int success = 1;
-    cout << "Session key: " << encodedSessionKey << endl;
+    cout << "PV: Session key: " << encodedSessionKey << endl;
 
     StringSource (encodedSessionKey,true,
                   new HexDecoder(
@@ -851,7 +851,7 @@ int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEn
                      new StringSink(macDecoded)
                      ) // HexEncoder
                  ); // StringSource
-    cout << "hmac decoded: " << macDecoded << endl;
+    cout << "PV: hmac decoded: " << macDecoded << endl;
 
     try
     {
@@ -863,7 +863,7 @@ int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEn
                      new HashVerificationFilter(hmac, NULL, flags)
                      ); // StringSource
         success = 0;
-        cout << "Verified message" << endl;
+        cout << "PV: Verified message" << endl;
     }
     catch(const CryptoPP::Exception& e)
     {
@@ -885,22 +885,22 @@ void PostazioneVoto::addScheda(string scheda)
 
     XMLText* textNodeIdProcedura = rootNode->FirstChildElement("idProcedura")->FirstChild()->ToText();
     uint idProcedura = atoi(textNodeIdProcedura->Value());
-    cout << "idProcedura: " << idProcedura << endl;
+    cout << "PV: idProcedura: " << idProcedura << endl;
     sv.setIdProceduraVoto(idProcedura);
 
     XMLText* textNodeIdScheda = rootNode->FirstChildElement("id")->FirstChild()->ToText();
     uint idScheda = atoi(textNodeIdScheda->Value());
-    cout << "idScheda: " << idScheda << endl;
+    cout << "PV: idScheda: " << idScheda << endl;
     sv.setId(idScheda);
 
     XMLText* textNodeTipologiaElezione= rootNode->FirstChildElement("tipologiaElezione")->FirstChild()->ToText();
     uint tipologiaElezione = atoi(textNodeTipologiaElezione->Value());
-    cout << "tipologia elezione: " << tipologiaElezione << endl;
+    cout << "PV: tipologia elezione: " << tipologiaElezione << endl;
     sv.setTipoElezione(tipologiaElezione);
 
     XMLText* textNodeNumeroPreferenze = rootNode->FirstChildElement("numeroPreferenze")->FirstChild()->ToText();
     uint numeroPreferenze = atoi(textNodeNumeroPreferenze->Value());
-    cout << "Numero preferenze: " << numeroPreferenze << endl;
+    cout << "PV: Numero preferenze: " << numeroPreferenze << endl;
     sv.setNumPreferenze(numeroPreferenze);
 
 
@@ -914,10 +914,10 @@ void PostazioneVoto::addScheda(string scheda)
     do{
 
         int idLista = listaElement->IntAttribute("id");
-        cout <<" --- lista trovata" << endl;
-        cout << "id Lista: " << idLista << endl;
+        cout << "PV:  --- lista trovata" << endl;
+        cout << "PV: id Lista: " << idLista << endl;
         string nomeLista = listaElement->Attribute("nome");
-        cout << "nome: " << nomeLista << endl;
+        cout << "PV: nome: " << nomeLista << endl;
 
         XMLElement * firstCandidatoElement  = listaElement->FirstChildElement("candidato");
         XMLElement * lastCandidatoElement = listaElement->LastChildElement("candidato");
@@ -927,7 +927,7 @@ void PostazioneVoto::addScheda(string scheda)
         bool lastCandidato = false;
         do{
             int id = candidatoElement->IntAttribute("id");
-            cout << "trovato candidato, id: " << id << endl;
+            cout << "PV: trovato candidato, id: " << id << endl;
 
             XMLElement * matricolaElement = candidatoElement->FirstChildElement("matricola");
             XMLNode * matricolaInnerNode = matricolaElement->FirstChild();
@@ -969,7 +969,7 @@ void PostazioneVoto::addScheda(string scheda)
             }
             cout << dataNascita << endl;
 
-            cout << "Estratti i dati del candidato id: " << id << endl;
+            cout << "PV: Estratti i dati del candidato id: " << id << endl;
             sv.addCandidato(matricola,nome,cognome,nomeLista,dataNascita,luogoNascita);
 
             //accesso al successivo candidato
@@ -977,11 +977,11 @@ void PostazioneVoto::addScheda(string scheda)
                 lastCandidato = true;
             }else {
                 candidatoElement = candidatoElement->NextSiblingElement("candidato");
-                cout << "ottengo il puntatore al successivo candidato" << endl;
+                cout << "PV: ottengo il puntatore al successivo candidato" << endl;
             }
         }while(!lastCandidato);
 
-        cout << "non ci sono altri candidati nella lista: " << nomeLista << endl;
+        cout << "PV: non ci sono altri candidati nella lista: " << nomeLista << endl;
 
 
         if(listaElement == lastListaElement){
@@ -990,10 +990,10 @@ void PostazioneVoto::addScheda(string scheda)
         else{
             //accediamo alla successiva lista nella scheda di voto
             listaElement = listaElement->NextSiblingElement("lista");
-            cout << "ottengo il puntatore alla successiva lista" << endl;
+            cout << "PV: ottengo il puntatore alla successiva lista" << endl;
         }
     }while(!lastLista);
-    cout << "non ci sono altre liste" << endl;
+    cout << "PV: non ci sono altre liste" << endl;
 
     schedeVoto.push_back(sv);
 }
@@ -1019,7 +1019,7 @@ void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
                       new StringSink(decodedPublicKey)
                       ) // HexDecoder
                   ); // StringSource
-    cout << "publicKey decodedificata da esadecimale: " << decodedPublicKey << endl;
+    cout << "PV: publicKey decodedificata da esadecimale: " << decodedPublicKey << endl;
 
     StringSource ss(decodedPublicKey,true /*pumpAll*/);
     rsaPublicKeyRP.Load(ss);

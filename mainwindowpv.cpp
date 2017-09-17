@@ -27,6 +27,7 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna2(vector<SchedaCompilata>)));//secondo metodo di invio settato come risposta al signal di invio
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
+    QObject::connect(pv,SIGNAL(wrongOTP()),SLOT(showErrorOTP()));
     QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showMessageUrnaUnreachable()));
     //avvio il thread del model
     pv->start();
@@ -139,8 +140,8 @@ void MainWindowPV::mostraScheda(){
     //    item->setFont(serifFont);
     ui->label_numeroPreferenzeValue->setText(QString::number(numeroPreferenze));
     numPreferenzeMax = numeroPreferenze;
-    numChecked = 0;
-    cout << "Numero preferenze selezionate: " << numChecked << endl;
+    numPreferenzeChecked = 0;
+    cout << "View:Numero preferenze selezionate: " << numPreferenzeChecked << endl;
 
     uint tipologiaElezione = schedaCorrente.getTipoElezione();
     ui->label_tipologiaElezioneValue->setText(QString::number(tipologiaElezione));
@@ -184,9 +185,9 @@ void MainWindowPV::mostraScheda(){
 
     }
 
-    //visualizzazione scheda completata, azzeriamo il valore numChecked, perché l'aggiunta di elementi nel list widget viene considerata una variazione degli item
+    //visualizzazione scheda completata, azzeriamo il valore numPreferenzeChecked, perché l'aggiunta di elementi nel list widget viene considerata una variazione degli item
     //purtroppo non riesco a catturare l'evento di check sugli item diversamente
-    numChecked = 0;
+    numPreferenzeChecked = 0;
     addingElementToListWidget = false;
 
     ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
@@ -210,20 +211,20 @@ void MainWindowPV::updateInterfaccia(unsigned int statoPV){
     switch(statoPV){
     case pv->statiPV::attesa_attivazione:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::attivazione);
-        cout << "schermata attivazione impostata" << endl;
+        cout << "View:schermata attivazione impostata" << endl;
         break;
     case pv->statiPV::libera:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::disponibile);
         ui->passwordPV_lineEdit->setText("");
         ui->wrongPassword_label->hide();
-        cout << "schermata disponibile impostata" << endl;
+        cout << "View:schermata disponibile impostata" << endl;
         break;
     case pv->statiPV::attesa_abilitazione:
         ui->stackedWidget->setCurrentIndex(InterfaccePV::abilitazione);
-        cout << "schermata abilitazione otp impostata" << endl;
+        cout << "View:schermata abilitazione otp impostata" << endl;
         break;
     case pv->statiPV::votazione_in_corso:
-        cout << "richiesta schede di voto" << endl;
+        cout << "View:richiesta schede di voto" << endl;
         emit needSchede();
         ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
         break;
@@ -245,7 +246,21 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
 {    //estrae dati dall'interfaccia di compilazione scheda,
     //crea una scheda compilata e la aggiunge al vettore delle
     //schede compilate da inviare all'urna
-
+    if(this->numPreferenzeChecked == 0){
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("Attenzione! Scheda bianca");
+        msgBox.setInformativeText("Non hai selezionato alcuna preferenza per la scheda corrente. "
+                                  "Sei sicuro di volere lasciare bianca la scheda? "
+                                  "Clicca su 'Seleziona Preferenze' per continuare a compilare la scheda, "
+                                  "o su 'Prosegui' per passare alla scheda successiva. Attenzione!! Non potrai tornare indietro.");
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Abort);
+        msgBox.buttons().at(0)->setText("Prosegui");
+        msgBox.buttons().at(1)->setText("Seleziona Preferenze");
+        int ret = msgBox.exec();
+        if(ret == QMessageBox::Abort){
+            return;
+        }
+    }
     SchedaCompilata sc;
 
     uint codScheda = ui->label_numeroSchedaValue->text().toUInt();
@@ -278,7 +293,7 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
         mostraScheda();
     }
     else{
-        cout << "View: sto emettondo il segnale per il thread PV, il quale dovrà occuparsi dell'invio delle schede"  << endl;
+        cout << "View:View: sto emettondo il segnale per il thread PV, il quale dovrà occuparsi dell'invio delle schede"  << endl;
 
         emit inviaSchedeCompilate(schedeCompilate);
         schedeCompilate.clear();
@@ -291,21 +306,21 @@ void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
 {
     if(addingElementToListWidget){
         //la listWidget è in fase di creazione, evitare il rilevamento dell'evento di modifica degli item
-        //poichè causa il trigger dell'evento di unchecked e diminuisce il valore di numChecked quando questa modifica non è desiderata
+        //poichè causa il trigger dell'evento di unchecked e diminuisce il valore di numPreferenzeChecked quando questa modifica non è desiderata
         return;
     }
     QVariant var = item->data(Qt::UserRole);
     string matricola = var.toString().toStdString();
-    cout << "Item's matricola: " << matricola << endl;
+    cout << "View:Item's matricola: " << matricola << endl;
     if(item->checkState()==Qt::CheckState::Checked){
-        numChecked++;
+        numPreferenzeChecked++;
 
     }
     else if (item->checkState()==Qt::CheckState::Unchecked){
-        numChecked--;
+        numPreferenzeChecked--;
     }
 
-    if(numChecked>numPreferenzeMax){
+    if(numPreferenzeChecked>numPreferenzeMax){
         ui->pushButton_nextSend->setEnabled(false);
         QMessageBox msgBox(this);
         msgBox.setInformativeText("Hai superato il numero di preferenze massime consentito. Deseleziona almeno una preferenza.");
@@ -315,8 +330,8 @@ void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
     else{
         ui->pushButton_nextSend->setEnabled(true);
     }
-    cout << "Preferenze massime:" << numPreferenzeMax << endl;
-    cout << "Numero preferenze selezionate: " << numChecked << endl;
+    cout << "View:Preferenze massime:" << numPreferenzeMax << endl;
+    cout << "View:Numero preferenze selezionate: " << numPreferenzeChecked << endl;
 }
 
 void MainWindowPV::on_confermaOTP_button_clicked()

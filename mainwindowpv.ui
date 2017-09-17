@@ -84,7 +84,7 @@ background-color: white;
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="attivazione_page">
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -297,7 +297,7 @@ background-color: white;
             <item row="1" column="0">
              <widget class="QLabel" name="label_numeroPreferenze">
               <property name="text">
-               <string>Numero preferenze</string>
+               <string>Numero massimo preferenze</string>
               </property>
              </widget>
             </item>
