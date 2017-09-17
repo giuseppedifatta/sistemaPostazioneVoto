@@ -661,17 +661,17 @@ void SSLServer::ShowCerts(SSL * ssl) {
     ERR_print_errors_fp(stderr);
     if (cert != NULL) {
         pvChiamante->mutex_stdout.lock();
-        BIO_printf(this->outbio, "SeggioPV:Client certificates:\n");
+        BIO_printf(this->outbio, "ServerPV::Client certificates:\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        BIO_printf(this->outbio, "SeggioPV:Subject: %s\n", line);
+        BIO_printf(this->outbio, "ServerPV::Subject: %s\n", line);
         free(line);
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        BIO_printf(this->outbio, "SeggioPV:Issuer: %s\n", line);
+        BIO_printf(this->outbio, "ServerPV::Issuer: %s\n", line);
         free(line);
         pvChiamante->mutex_stdout.unlock();
     } else{
         pvChiamante->mutex_stdout.lock();
-        BIO_printf(this->outbio, "SeggioPV:No certificates.\n");
+        BIO_printf(this->outbio, "ServerPV::No certificates.\n");
         pvChiamante->mutex_stdout.unlock();
     }
     X509_free(cert);

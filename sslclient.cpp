@@ -624,15 +624,16 @@ void SSLClient::richiestaServizioInvioSchede(uint numSchede){
     sendString_SSL(ssl,to_string(numSchede));
 }
 
-void SSLClient::invioChiavi(string encryptedKey, string encryptedIV){
+void SSLClient::invioKC_IVC(string encryptedKey, string encryptedIV){
 
+    cout << "invio  eseguito" << endl;
     sendString_SSL(ssl,encryptedKey);
     sendString_SSL(ssl,encryptedIV);
 
 
 }
 
-bool SSLClient::inviaSchedaWithoutKeys(string schedaStr,string nonceAsString,string macPacchettoVoto){
+bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,string macPacchettoVoto){
     //invio scheda cifata
     sendString_SSL(ssl,schedaStr);
 
