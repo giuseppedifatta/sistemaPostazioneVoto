@@ -6,6 +6,7 @@
  */
 
 #include "postazionevoto.h"
+#include "openotp_login.h"
 int verifyMAC(string encodedSessionKey,string data, string macEncoded);
 PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
@@ -720,12 +721,41 @@ void PostazioneVoto::validateOTP(QString otp)
 {
 
     //TODO contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
-    if(otp=="123456"){
+    string url = "https://192.168.1.11:8443/openotp/";
+    string username = "user1.seggio1";
+    string password = "password";
+
+    char * writableURL = new char[url.size() + 1];
+    std::copy(url.begin(), url.end(), writableURL);
+    writableURL[url.size()] = '\0'; // don't forget the terminating 0
+
+    char * writableUsername = new char[username.size() + 1];
+    std::copy(username.begin(), username.end(), writableUsername);
+    writableUsername[username.size()] = '\0'; // don't forget the terminating 0
+
+    char * writablePassword = new char[password.size() + 1];
+    std::copy(password.begin(), password.end(), writablePassword);
+    writablePassword[password.size()] = '\0'; // don't forget the terminating 0
+
+    string otpStr = otp.toStdString();
+    char * writableOTP = new char[otpStr.size() + 1];
+    std::copy(otpStr.begin(), otpStr.end(), writableOTP);
+    writableOTP[otpStr.size()] = '\0'; // don't forget the terminating 0
+
+    bool success= otp_login(writableURL,writableUsername,writablePassword,writableOTP);
+    delete[] writableURL;
+    delete[] writableUsername;
+    delete[] writablePassword;
+    delete[] writableOTP;
+    if(success){
         enablingPV();
     }
     else{
         emit wrongOTP();
     }
+
+    // don't forget to free the string after finished using it
+
 }
 
 

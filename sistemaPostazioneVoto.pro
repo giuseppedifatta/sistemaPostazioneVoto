@@ -29,7 +29,8 @@ HEADERS  += mainwindowpv.h \
     schedavoto.h \
     candidato.h \
     listaelettorale.h \
-    schedacompilata.h
+    schedacompilata.h \
+    openotp_login.h
 
 FORMS    += mainwindowpv.ui
 
@@ -44,7 +45,8 @@ DEPENDPATH += $$PWD/../../../../usr/lib/x86_64-linux-gnu
 LIBS += \
     -lssl \
     -lcrypto\
-    -lcryptopp
+    -lcryptopp\
+
 
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../usr/lib/x86_64-linux-gnu/release/ -lcryptopp
@@ -55,3 +57,5 @@ win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../usr/lib/i386-l
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../usr/lib/i386-linux-gnu/debug/ -ltinyxml2
 else:unix: LIBS += -L$$PWD/../../../../usr/lib/i386-linux-gnu/ -ltinyxml2
 
+
+unix|win32: LIBS += -lopenotp
