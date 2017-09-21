@@ -208,159 +208,6 @@ void PostazioneVoto::selectSchedeDaMostrare()
     emit giveSchedeToView(schedeDaMostrare);
 }
 
-//void PostazioneVoto::inviaVotiToUrna(vector<SchedaCompilata> schede)
-//{
-//    // con i dati della schede compilate, per ogni scheda crea un file xml
-//    //di cui cifrare i campi contenenti i candidati votati e
-//    //quindi invia uno per volta i file all'urna
-
-
-
-//    //TODO comunico all'urna che un certo votante identificato da una certa matricola ha espresso il suo voto
-//    SSLClient * pv_client1 = new SSLClient(this);
-//    bool matricolaSettedVoted = false;
-//    if(pv_client1->connectTo(ipUrna)!=nullptr){
-
-//        if(pv_client1->setVoted(matricolaVotante)){
-//            cout << "PV: l'urna ha registrato che " << matricolaVotante << " ha votato" << endl;
-//            matricolaSettedVoted = true;
-//        }
-//        else{
-//            cerr << "impossibile comunicare esito della votazione all'urna" << endl;
-//        }
-
-//    }
-//    else{
-//        emit urnaNonRaggiungibile();
-//        this->setStatoPV(statiPV::offline);
-//        delete pv_client1;
-//        //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
-//        //le schede di voto, sono attualmente salvate nel vettore delle schedeDaInviare
-//        return;
-//    }
-//    delete pv_client1;
-
-//    if(!matricolaSettedVoted){
-//        cerr << "Errore nella registrazione del voto per la matricola: " << matricolaVotante << endl;
-//        this->setStatoPV(statiPV::errore);
-//        return;
-//    }
-
-//    //salvo temporaneamente le schede sulla postazione di voto
-//    for (uint i = 0; i< schede.size(); i++){
-//        schedeDaInviare.push_back(schede.at(i));
-//    }
-//    cout << "PV: Schede da inviare: " << schedeDaInviare.size() << endl;
-
-//    for(uint i = 0; i < schedeDaInviare.size(); i++){
-//        cout << "PV: Schede pendenti: " << schedeDaInviare.size() << endl;
-//        bool schedaStored = false;
-//        //generazione chiave simmetrica e iv
-//        AutoSeededRandomPool rng;
-
-//        // chiave simmetrica
-//        SecByteBlock key( AES::MAX_KEYLENGTH );
-//        rng.GenerateBlock( key, key.size() );
-
-
-//        //initial value
-//        SecByteBlock iv(AES::MAX_KEYLENGTH);
-//        rng.GenerateBlock( iv, iv.size() );
-
-//        //creazione file xml della scheda compilata e cifratura campi scheda voto con chiave simmetrica
-//        XMLDocument xmlDoc;
-//        creaSchedaCompilataXML_AES(&xmlDoc,schedeDaInviare.at(i),key,iv);
-
-//        //cifratura chiave simmetrica e iv con chiave pubblica di RP
-//        cout << "PV: cifro Key e IV " << endl;
-//        string encryptedKey = encryptRSA_withPublickKeyRP(key);
-//        cout << "PV: encrypted key: " << encryptedKey << endl;
-//        string encryptedIV = encryptRSA_withPublickKeyRP(iv);
-//        cout << "PV: encrypted IV: " << encryptedIV << endl;
-
-
-//        //        string encryptedKey = std::string(reinterpret_cast<const char*>(key.data()), key.size());
-//        //        string encryptedIV = std::string(reinterpret_cast<const char*>(iv.data()), iv.size());
-
-//        bool urnaUnreachable = false;
-//        while (!schedaStored && !urnaUnreachable){
-
-//            //generazione nonce
-
-//            Integer randomUint(rng,32);
-//            std::stringstream ss;
-//            ss << randomUint;
-//            std::string s(ss.str());
-//            uint nonce = atoi(s.c_str());
-
-//            cout << "PV: nonce: " << nonce << endl;
-
-//            //cifratura nonce
-//            string encryptedNonce = encryptStdString(std::to_string(nonce),key,iv);
-
-//            //sostituzione nonce nel file xml
-//            XMLNode *rootNode = xmlDoc.FirstChild();
-
-//            rootNode->FirstChildElement("nonce")->SetText(encryptedNonce.c_str());
-
-
-//            //print file xml della scheda to string
-//            XMLPrinter printer;
-//            xmlDoc.Print( &printer );
-//            string schedaStr = printer.CStr();
-//            cout << schedaStr << endl;
-
-//            //generazione mac
-//            //dati di ingresso HMAC: scheda voto con campi candidati cifrati, chiave simmetrica e iv cifrati, nonce generato al passo precedente
-//            //chiave per HAMC: chiave di sessione tra pv e urna
-//            string datiConcatenati = schedaStr + encryptedKey + encryptedIV + std::to_string(nonce);
-//            cout << "PV: Dati di cui calcolare il mac: " << datiConcatenati << endl;
-
-//            string macPacchettoVoto = calcolaMAC(sessionKey_PV_Urna,datiConcatenati);
-
-//            //invio pacchetto di voto all'urna
-//            SSLClient * pv_client = new SSLClient(this);
-
-//            if(pv_client->connectTo(ipUrna)!=nullptr){
-//                QThread::msleep(100);
-//                if(pv_client->inviaSchedaCompilata(schedaStr,encryptedKey, encryptedIV,std::to_string(nonce),macPacchettoVoto)){
-
-//                    //se il mac ricevuto dall'urna è univoco rispetto al db,
-//                    //la memorizzazione del voto andrà a buon fine
-//                    //settiamo schedaStored a true
-
-//                    schedaStored = true;
-//                    //eliminiamo la schedaCorrente dal vettore delle schede ancora da inviare all'urna
-//                    schedeDaInviare.erase(schedeDaInviare.begin()+i);
-//                    //la dimensione del vettore è diminuita di uno, il prossimo elemento da leggere si
-//                    //trova una posizione indietro rispetto a prima di eseguire l'operazione appena precedente
-//                    i--;
-//                }
-//                else{
-//                    cerr << "scheda non memorizzata, verrà fatto un nuovo tentativo, cambiando l'nonce" << endl;
-//                }
-//            }
-//            else{
-//                emit urnaNonRaggiungibile();
-//                this->setStatoPV(statiPV::offline);
-//                urnaUnreachable = true;
-//                delete pv_client;
-//                //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna
-//                //e non sarebbe possibile inviare le schede di voto non ancora trasmesse
-//                //le schede di voto restanti sono attualmente salvate nel vettore delle schedeDaInviare
-//                return;
-//            }
-//            delete pv_client;
-//        }
-//    }
-
-
-//    //tutte le schede votate sono state recapitate correttamente nell'urna
-
-//    cout << "PV: tutte le schede sono state consegnate all'urna virtuale" << endl;
-//    //emettiamo il segnale per la view, così da comunicare all'elettore la conclusione corretta dell'operazione di voto
-//    setStatoPV(statiPV::votazione_completata);
-//}
 
 void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
     // con i dati della schede compilate, per ogni scheda crea un file xml
@@ -376,7 +223,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
     //mi collego all'urna
     if(pv_client->connectTo(ipUrna)!=nullptr){
 
-        uint numSchede = schede.size();
+        uint numSchede = /*200;*/schede.size();
         cout << "PV: Schede da inviare: " << numSchede << endl;
 
         //1. richiedo il servizio di invio voti
@@ -385,7 +232,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
 
         //per ogni scheda eseguo l'invio
 
-        for(uint i = 0; i < schede.size(); i++){
+        for(uint i = 0; i < numSchede/*schede.size()*/; i++){
             cout << "PV: invio pacchetto " << i+1 << endl;
 
             //generazione chiave simmetrica e iv
@@ -720,7 +567,7 @@ void PostazioneVoto::validatePassKey(QString pass)
 void PostazioneVoto::validateOTP(QString otp)
 {
 
-    //TODO contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
+   //contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
     string url = "https://192.168.1.11:8443/openotp/";
     string username = "user1.seggio1";
     string password = "password";
@@ -747,7 +594,7 @@ void PostazioneVoto::validateOTP(QString otp)
     delete[] writableUsername;
     delete[] writablePassword;
     delete[] writableOTP;
-    if(success){
+    if(success/*otp=="123456"*/){
         enablingPV();
     }
     else{

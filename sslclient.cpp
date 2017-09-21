@@ -662,53 +662,53 @@ bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,stri
 
 }
 
-bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac)
-{
-    bool inviata = false;
-    //richiesta servizio
-    int serviceCod = serviziUrna::invioSchedeCompilate;
-    stringstream ssCod;
-    ssCod << serviceCod;
-    string strCod = ssCod.str();
-    const char * charCod = strCod.c_str();
-    pvChiamante->mutex_stdout.lock();
-    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
-    pvChiamante->mutex_stdout.unlock();
-    SSL_write(ssl,charCod,strlen(charCod));
+//bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac)
+//{
+//    bool inviata = false;
+//    //richiesta servizio
+//    int serviceCod = serviziUrna::invioSchedeCompilate;
+//    stringstream ssCod;
+//    ssCod << serviceCod;
+//    string strCod = ssCod.str();
+//    const char * charCod = strCod.c_str();
+//    pvChiamante->mutex_stdout.lock();
+//    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+//    pvChiamante->mutex_stdout.unlock();
+//    SSL_write(ssl,charCod,strlen(charCod));
 
-    //invio scheda cifrata
-    sendString_SSL(ssl,schedaCifrata);
+//    //invio scheda cifrata
+//    sendString_SSL(ssl,schedaCifrata);
 
-    //invio kc
-    sendString_SSL(ssl,kc);
+//    //invio kc
+//    sendString_SSL(ssl,kc);
 
-    //invio ivc
-    sendString_SSL(ssl,ivc);
+//    //invio ivc
+//    sendString_SSL(ssl,ivc);
 
-    //invio nonce
-    sendString_SSL(ssl,nonce);
+//    //invio nonce
+//    sendString_SSL(ssl,nonce);
 
-    //invio mac
-    sendString_SSL(ssl,mac);
+//    //invio mac
+//    sendString_SSL(ssl,mac);
 
-    //ricevi valore di successo della memorizzazione del voto
-    // 0 -> success
-    // 1 -> error
+//    //ricevi valore di successo della memorizzazione del voto
+//    // 0 -> success
+//    // 1 -> error
 
-    char buffer[16];
-    memset(buffer, '\0', sizeof(buffer));
-    int bytes = SSL_read(ssl,buffer,sizeof(buffer));
-    if(bytes > 0){
-        buffer[bytes] = 0;
-        int result = atoi(buffer);
-        if (result == 0){
-            inviata = true;
-        }
+//    char buffer[16];
+//    memset(buffer, '\0', sizeof(buffer));
+//    int bytes = SSL_read(ssl,buffer,sizeof(buffer));
+//    if(bytes > 0){
+//        buffer[bytes] = 0;
+//        int result = atoi(buffer);
+//        if (result == 0){
+//            inviata = true;
+//        }
 
-    }
+//    }
 
-    return inviata;
-}
+//    return inviata;
+//}
 
 bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
     //invia matricola
