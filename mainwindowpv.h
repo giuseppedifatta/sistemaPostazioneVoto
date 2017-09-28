@@ -63,7 +63,8 @@ public slots:
     void messageErrorPassword();
     void receiveSchedeToShow(vector <SchedaVoto> schede);
     void showErrorOTP();
-    void showMessageUrnaUnreachable();
+    //void showInterfaceUrnaOffline();
+    //void showMessageUrnaUnreachable();
 signals:
     void checkPassKey(QString passKey);
     void stopThreads();

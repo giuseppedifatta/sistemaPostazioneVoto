@@ -1,12 +1,21 @@
 #ifndef SSLCLIENT_H
 #define SSLCLIENT_H
+
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <openssl/ssl.h>
 #include <openssl/conf.h>
-#include <openssl/err.h>
 #include <string>
+#include <ifaddrs.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+using namespace std;
 
 #include "postazionevoto.h"
 
@@ -38,6 +47,7 @@ private:
 
     void sendString_SSL(SSL *ssl, string s);
     int receiveString_SSL(SSL *ssl, string &s);
+    string getIPbyInterface(const char *interfaceName);
 public:
     SSLClient(PostazioneVoto * pv);
     ~SSLClient();
@@ -57,7 +67,7 @@ public:
         //scrutinio, //responsabile procedimento
         //autenticazioneTecnico, //sistema tecnico
         //autenticazioneRP, //responsabile procedimento
-        setMatricolaVoted = 10,
+        //setMatricolaVoted = 10,
         checkConnection = 11
     };
 
@@ -71,8 +81,8 @@ public:
     //verso Urna
     bool attivaPostazioneVoto(string sessionKey);
     bool inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac);
-    bool setVoted(uint matricola);
-    void sendCodConnection();
+    //bool setVoted(uint matricola);
+    void testConnection();
 
     //verso OTPServerProvider
     void richiestaServizioInvioSchede(uint numSchede);

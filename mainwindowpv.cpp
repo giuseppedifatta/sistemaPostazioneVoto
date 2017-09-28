@@ -28,7 +28,8 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna2(vector<SchedaCompilata>)));//secondo metodo di invio settato come risposta al signal di invio
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
     QObject::connect(pv,SIGNAL(wrongOTP()),SLOT(showErrorOTP()));
-    QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showMessageUrnaUnreachable()));
+    //QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showInterfaceUrnaOffline()));
+    //QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showMessageUrnaNonRaggiungibile()));
     //avvio il thread del model
     pv->start();
 
@@ -99,14 +100,19 @@ void MainWindowPV::showErrorOTP()
     ui->codiceOTP_lineEdit->clear();
 }
 
-void MainWindowPV::showMessageUrnaUnreachable()
-{
-    if(ui->stackedWidget->currentIndex()!=InterfaccePV::offline){
-        QMessageBox msgBox(this);
-        msgBox.setInformativeText("Impossibile comunicare con l'Urna, rivolgersi alla commissione");
-        msgBox.exec();
-    }
-}
+//void MainWindowPV::showInterfaceUrnaOffline()
+//{
+//    ui->stackedWidget->setCurrentIndex(InterfaccePV::offline);
+//}
+
+//void MainWindowPV::showMessageUrnaUnreachable()
+//{
+//    if(ui->stackedWidget->currentIndex()!=InterfaccePV::offline){
+//        QMessageBox msgBox(this);
+//        msgBox.setInformativeText("Impossibile comunicare con l'Urna, rivolgersi alla commissione");
+//        msgBox.exec();
+//    }
+//}
 
 
 void MainWindowPV::mostraScheda(){

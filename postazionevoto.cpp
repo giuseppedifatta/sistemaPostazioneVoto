@@ -12,8 +12,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
     //mainWindow = m;
     HTAssociato = 0;
-    ivCBC = 0;
-    symKeyAES = 0;
+
     attivata = false;
 
     //TODO calcolare dall'indirizzo IP
@@ -262,9 +261,13 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
             pv_client->invioKC_IVC(encryptedKey, encryptedIV);
 
             bool schedaStored = false;
+
             //3. invio scheda
-            while (!schedaStored){
+            uint tentativiInvio = 0;
+            while (!schedaStored && tentativiInvio < 10){
+                tentativiInvio++;
                 cout << "PV: Invio nonce, scheda  e MAC del pacchetto: " << i+1 << endl;
+                cout << "PV: tentativo n. "  << tentativiInvio << endl;
                 //generazione nonce
 
                 Integer randomUint(rng,32);
@@ -316,23 +319,30 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                     schedaStored = false;
                 }
             }//while
-
+            if (!schedaStored){
+                //una scheda non è stata inviata, nonostante i 10 tentativi
+                //abortire l'invio
+                erroreInvio = true;
+                break;
+            }
         }
 
         //comunicazione matricola e conferma esito positivo di ricezione schede
         cout << "PV: Comunico all'urna chi è che ha espresso il voto" << endl;
-        if(pv_client->sendMatricolaAndConfirmStored(matricolaVotante)){
+        if(!erroreInvio){
+            if(pv_client->sendMatricolaAndConfirmStored(matricolaVotante)){
 
-            inviati = true;
-        }
-        else{
-            erroreInvio = true;
+                inviati = true;
+            }
+            else{
+                erroreInvio = true;
+            }
         }
     }//if connect
 
 
     else{ //else connect
-        emit urnaNonRaggiungibile();
+        //emit urnaNonRaggiungibile();
 
         postazioneOffline = true;
         //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
@@ -353,7 +363,6 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
         return;
     }
     if(postazioneOffline){
-
         setStatoPV(statiPV::offline);
         return;
     }
@@ -370,7 +379,7 @@ void PostazioneVoto::tryConnectUrna()
     if(pv_client->connectTo(ipUrna)!=nullptr){
 
 
-        pv_client->sendCodConnection();
+        pv_client->testConnection();
         if(attivata){
             setStatoPV(statiPV::libera);
         }
@@ -379,7 +388,7 @@ void PostazioneVoto::tryConnectUrna()
         }
     }
     else{
-        emit urnaNonRaggiungibile();
+        setStatoPV(statiPV::offline);
     }
     delete pv_client;
 }
@@ -557,7 +566,7 @@ void PostazioneVoto::validatePassKey(QString pass)
         }
     }
     else{
-        emit urnaNonRaggiungibile();
+        //emit urnaNonRaggiungibile();
         this->setStatoPV(statiPV::offline);
     }
 
@@ -567,8 +576,8 @@ void PostazioneVoto::validatePassKey(QString pass)
 void PostazioneVoto::validateOTP(QString otp)
 {
 
-   //contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
-    string url = "https://192.168.1.11:8443/openotp/";
+    //contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
+    string url = "https://147.163.26.229:8443/openotp/";
     string username = "user1.seggio1";
     string password = "password";
 
@@ -749,6 +758,36 @@ int PostazioneVoto::verifyMAC(string encodedSessionKey,string data, string macEn
     return success;
 }
 
+string PostazioneVoto::getUsernameHTAssociato() const
+{
+    return usernameHTAssociato;
+}
+
+void PostazioneVoto::setUsernameHTAssociato(const string &value)
+{
+    usernameHTAssociato = value;
+}
+
+string PostazioneVoto::getPasswordHTAssociato() const
+{
+    return passwordHTAssociato;
+}
+
+void PostazioneVoto::setPasswordHTAssociato(const string &value)
+{
+    passwordHTAssociato = value;
+}
+
+uint PostazioneVoto::getIdTipoVotante() const
+{
+    return idTipoVotante;
+}
+
+void PostazioneVoto::setIdTipoVotante(const uint &value)
+{
+    idTipoVotante = value;
+}
+
 void PostazioneVoto::addScheda(string scheda)
 {
     SchedaVoto sv;
@@ -873,6 +912,11 @@ void PostazioneVoto::addScheda(string scheda)
     cout << "PV: non ci sono altre liste" << endl;
 
     schedeVoto.push_back(sv);
+}
+
+void PostazioneVoto::clearVectorSchede()
+{
+    this->schedeVoto.clear();
 }
 
 string PostazioneVoto::getSessionKey_PV_Urna() const

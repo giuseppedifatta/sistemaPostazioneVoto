@@ -7,15 +7,7 @@
  *      Author: giuseppe
  */
 
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-using namespace std;
+
 
 #define SERVER_PORT "4433"
 
@@ -171,31 +163,31 @@ void SSLClient::init_openssl_library() {
 
     ERR_load_crypto_strings();
 
-//    /* https://www.openssl.org/docs/ssl/SSL_library_init.html */
-//    SSL_library_init();
-//    /* Cannot fail (always returns success) ??? */
+    //    /* https://www.openssl.org/docs/ssl/SSL_library_init.html */
+    //    SSL_library_init();
+    //    /* Cannot fail (always returns success) ??? */
 
-//    /* https://www.openssl.org/docs/crypto/ERR_load_crypto_strings.html */
-//    SSL_load_error_strings();
-//    /* Cannot fail ??? */
+    //    /* https://www.openssl.org/docs/crypto/ERR_load_crypto_strings.html */
+    //    SSL_load_error_strings();
+    //    /* Cannot fail ??? */
 
-//    ERR_load_BIO_strings();
-//    /* SSL_load_error_strings loads both libssl and libcrypto strings */
-//    //ERR_load_crypto_strings();
-//    /* Cannot fail ??? */
+    //    ERR_load_BIO_strings();
+    //    /* SSL_load_error_strings loads both libssl and libcrypto strings */
+    //    //ERR_load_crypto_strings();
+    //    /* Cannot fail ??? */
 
-//    /* OpenSSL_config may or may not be called internally, based on */
-//    /*  some #defines and internal gyrations. Explicitly call it    */
-//    /*  *IF* you need something from openssl.cfg, such as a         */
-//    /*  dynamically configured ENGINE.                              */
-//    OPENSSL_config(NULL);
+    //    /* OpenSSL_config may or may not be called internally, based on */
+    //    /*  some #defines and internal gyrations. Explicitly call it    */
+    //    /*  *IF* you need something from openssl.cfg, such as a         */
+    //    /*  dynamically configured ENGINE.                              */
+    //    OPENSSL_config(NULL);
 
 
-//    /* OpenSSL_config may or may not be called internally, based on */
-//    /*  some #defines and internal gyrations. Explicitly call it    */
-//    /*  *IF* you need something from openssl.cfg, such as a         */
-//    /*  dynamically configured ENGINE.                              */
-//    //OPENSSL_config(NULL);
+    //    /* OpenSSL_config may or may not be called internally, based on */
+    //    /*  some #defines and internal gyrations. Explicitly call it    */
+    //    /*  *IF* you need something from openssl.cfg, such as a         */
+    //    /*  dynamically configured ENGINE.                              */
+    //    //OPENSSL_config(NULL);
 
 }
 
@@ -517,6 +509,11 @@ void SSLClient::updateStatoPVtoSeggio(unsigned int idPV, unsigned int statoPV){
 
 bool SSLClient::attivaPostazioneVoto(string sessionKey)
 {
+    //nel caso in cui un tentativo di attavazione non si sia completato con successo
+    //il vettore delle schede di voto potrebbe aver memorizzato alcune schede
+    //per sicurezza bisogna svuotarlo prima di procedere con un nuovo tentativo di attivazione
+    pvChiamante->clearVectorSchede();
+
     bool attivata = false;
     //richiesta servizio
     int serviceCod = serviziUrna::attivazionePV;
@@ -528,6 +525,10 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     cout << "ClientPV: richiedo il servizio: " << charCod << endl;
     pvChiamante->mutex_stdout.unlock();
     SSL_write(ssl,charCod,strlen(charCod));
+
+    //invio mio ip
+    string my_ip = this->getIPbyInterface("enp0s8");
+    sendString_SSL(ssl,my_ip);
 
     //ricevo idProceduraVoto
     uint idProcedura;
@@ -593,16 +594,43 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
 
             string scheda;
             receiveString_SSL(ssl, scheda);
+            if(scheda ==""){
+                attivata = false; // ricezione schede non riuscita
+                break;
+            }
             cout << scheda << endl;
-            pvChiamante->addScheda(scheda);
-            cout << "ClientPV: scheda " << i+1 << " ricevuta" << endl;
+
+            //ricevo MAC i-esima scheda di voto
+            string encodedMAC;
+            receiveString_SSL(ssl,encodedMAC);
+            int verified = pvChiamante->verifyMAC(sessionKey,scheda,encodedMAC);
+            if(verified == 0){
+                pvChiamante->addScheda(scheda);
+                cout << "ClientPV: scheda " << i+1 << " ricevuta" << endl;
+            }
+            else{
+                attivata = false; // ricezione schede non riuscita
+                break;
+            }
         }
 
-        //ricevo chiave pubblica RP
-        string publicKey;
-        receiveString_SSL(ssl,publicKey);
-        cout << "ClientPV: publicKey RP: " << publicKey << endl;
-        pvChiamante->setRSAPublicKeyRP(publicKey);
+        if(attivata){
+            //ricevo chiave pubblica RP
+            string publicKeyRP;
+            receiveString_SSL(ssl,publicKeyRP);
+            cout << "ClientPV: publicKey RP: " << publicKeyRP << endl;
+
+            //ricevo mac chiave pubblica RP  e verifico
+            string encodedMAC;
+            receiveString_SSL(ssl,encodedMAC);
+            int verified = pvChiamante->verifyMAC(sessionKey,publicKeyRP,encodedMAC);
+            if(verified == 0){//MAC chiave pubblica RP verifcato
+                pvChiamante->setRSAPublicKeyRP(publicKeyRP);
+            }
+            else{
+                attivata = false; //ricezione chiave pubblica RP non riuscita
+            }
+        }
 
     }
     return attivata;
@@ -619,6 +647,11 @@ void SSLClient::richiestaServizioInvioSchede(uint numSchede){
     cout << "ClientPV: richiedo il servizio: " << charCod << endl;
     pvChiamante->mutex_stdout.unlock();
     SSL_write(ssl,charCod,strlen(charCod));
+
+    //invio mio ip
+    string my_ip = this->getIPbyInterface("enp0s8");
+    sendString_SSL(ssl,my_ip);
+
 
     //invio del numero di schede che si vuole inviare
     sendString_SSL(ssl,to_string(numSchede));
@@ -644,10 +677,12 @@ bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,stri
 
 
     //ricevi esito operazione di ricezione scheda dall'urna
-    uint esito;
+    uint esito = 1;
     string s;
     receiveString_SSL(ssl,s);
-    esito = atoi(s.c_str());
+    if(s!=""){
+        esito = atoi(s.c_str());
+    }
 
     if(esito == 0){
 
@@ -662,59 +697,13 @@ bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,stri
 
 }
 
-//bool SSLClient::inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac)
-//{
-//    bool inviata = false;
-//    //richiesta servizio
-//    int serviceCod = serviziUrna::invioSchedeCompilate;
-//    stringstream ssCod;
-//    ssCod << serviceCod;
-//    string strCod = ssCod.str();
-//    const char * charCod = strCod.c_str();
-//    pvChiamante->mutex_stdout.lock();
-//    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
-//    pvChiamante->mutex_stdout.unlock();
-//    SSL_write(ssl,charCod,strlen(charCod));
 
-//    //invio scheda cifrata
-//    sendString_SSL(ssl,schedaCifrata);
-
-//    //invio kc
-//    sendString_SSL(ssl,kc);
-
-//    //invio ivc
-//    sendString_SSL(ssl,ivc);
-
-//    //invio nonce
-//    sendString_SSL(ssl,nonce);
-
-//    //invio mac
-//    sendString_SSL(ssl,mac);
-
-//    //ricevi valore di successo della memorizzazione del voto
-//    // 0 -> success
-//    // 1 -> error
-
-//    char buffer[16];
-//    memset(buffer, '\0', sizeof(buffer));
-//    int bytes = SSL_read(ssl,buffer,sizeof(buffer));
-//    if(bytes > 0){
-//        buffer[bytes] = 0;
-//        int result = atoi(buffer);
-//        if (result == 0){
-//            inviata = true;
-//        }
-
-//    }
-
-//    return inviata;
-//}
 
 bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
     //invia matricola
     sendString_SSL(ssl,to_string(matricola));
 
-    //ricevo conferma che i pacchetti statto per essere memorizzati
+    //ricevo conferma che i pacchetti stanno per essere memorizzati
     string ack;
     receiveString_SSL(ssl,ack);
 
@@ -736,38 +725,38 @@ bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
         return false;
 }
 
-bool SSLClient::setVoted(uint matricola)
-{
-    //richiesta servizio
-    int serviceCod = serviziUrna::setMatricolaVoted;
-    stringstream ssCod;
-    ssCod << serviceCod;
-    string strCod = ssCod.str();
-    const char * charCod = strCod.c_str();
-    pvChiamante->mutex_stdout.lock();
-    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
-    pvChiamante->mutex_stdout.unlock();
-    SSL_write(ssl,charCod,strlen(charCod));
+//bool SSLClient::setVoted(uint matricola)
+//{
+//    //richiesta servizio
+//    int serviceCod = serviziUrna::setMatricolaVoted;
+//    stringstream ssCod;
+//    ssCod << serviceCod;
+//    string strCod = ssCod.str();
+//    const char * charCod = strCod.c_str();
+//    pvChiamante->mutex_stdout.lock();
+//    cout << "ClientPV: richiedo il servizio: " << charCod << endl;
+//    pvChiamante->mutex_stdout.unlock();
+//    SSL_write(ssl,charCod,strlen(charCod));
 
-    bool settedVoted = false;
+//    bool settedVoted = false;
 
-    //invia matricola
-    sendString_SSL(ssl,to_string(matricola));
+//    //invia matricola
+//    sendString_SSL(ssl,to_string(matricola));
 
-    //ricevi esito operazione
-    string s;
-    receiveString_SSL(ssl,s);
-    int success = atoi(s.c_str());
-    if(success==0){
-        settedVoted = true;
-    }
+//    //ricevi esito operazione
+//    string s;
+//    receiveString_SSL(ssl,s);
+//    int success = atoi(s.c_str());
+//    if(success==0){
+//        settedVoted = true;
+//    }
 
-    return settedVoted;
-}
+//    return settedVoted;
+//}
 
 
 
-void SSLClient::sendCodConnection(){
+void SSLClient::testConnection(){
     //richiesta servizio
     int serviceCod = serviziUrna::checkConnection;
     stringstream ssCod;
@@ -808,4 +797,40 @@ void SSLClient::sendString_SSL(SSL* ssl, string s) {
     const char *num_bytes = length_str.c_str();
     SSL_write(ssl, num_bytes, strlen(num_bytes));
     SSL_write(ssl, s.c_str(), length);
+}
+
+string SSLClient::getIPbyInterface(const char * interfaceName){
+    struct ifaddrs *ifaddr, *ifa;
+    int /*family,*/ s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == NULL)
+            continue;
+
+        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+        if((strcmp(ifa->ifa_name,interfaceName)==0)&&(ifa->ifa_addr->sa_family==AF_INET))
+        {
+            if (s != 0)
+            {
+                printf("getnameinfo() failed: %s\n", gai_strerror(s));
+                exit(EXIT_FAILURE);
+            }
+            printf("\tInterface : <%s>\n",ifa->ifa_name );
+            printf("\t  Address : <%s>\n", host);
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    string ip_host = host;
+    return ip_host;
 }

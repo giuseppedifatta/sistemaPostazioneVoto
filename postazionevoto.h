@@ -53,7 +53,7 @@ signals:
     void wrongPassKey();
     void giveSchedeToView(vector <SchedaVoto> schedeDaMostrare);
     void wrongOTP();
-    void urnaNonRaggiungibile();
+    //void urnaNonRaggiungibile();
 
 public slots:
 
@@ -97,6 +97,7 @@ public:
     void setIdProceduraVoto(uint idProcedura);
     string calcolaMAC(string encodedSessionKey, string plainText);
     void addScheda(string scheda);
+    void clearVectorSchede();
     string getSessionKey_PV_Urna() const;
     void setSessionKey_PV_Urna(const string &value);
 
@@ -109,6 +110,16 @@ public:
     void tryConnectUrna();
     uint getMatricolaVotante() const;
     void setMatricolaVotante(const uint &value);
+
+    int verifyMAC(string encodedSessionKey, string data, string macEncoded);
+    string getUsernameHTAssociato() const;
+    void setUsernameHTAssociato(const string &value);
+
+    string getPasswordHTAssociato() const;
+    void setPasswordHTAssociato(const string &value);
+
+    uint getIdTipoVotante() const;
+    void setIdTipoVotante(const uint &value);
 
 private:
     bool attivata;
@@ -125,13 +136,16 @@ private:
     vector <SchedaVoto> schedeVoto;
     unsigned int tipoElettore;//in funzione di questo valore vanno selezionate le schede da mostrare per la compilazione
 
+    //informazioni da ricevere dal seggio, nel momento in cui effettua il push dell'associazione
     string usernameHTAssociato;
+    string passwordHTAssociato;
     uint matricolaVotante;
-    vector <SchedaCompilata> schedeDaInviare;
+    uint idTipoVotante;
+
+
+    //vector <SchedaCompilata> schedeDaInviare;
     //unsigned int timeout;
     unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
-    unsigned int symKeyAES; //chiave per la cifratura simmetrica, non di tipo uint
-    unsigned int ivCBC; //valore iniziale per CBC, non di tipo uint
 
     statiPV statoPV;
 
@@ -148,7 +162,7 @@ private:
     void creaSchedaCompilataXML_AES(XMLDocument *xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv);
     string AESencryptStdString(string plain, SecByteBlock key, SecByteBlock iv);
     string RSAencryptSecByteBlock(SecByteBlock valueBlock, CryptoPP::RSA::PublicKey publicKey);
-    int verifyMAC(string encodedSessionKey, string data, string macEncoded);
+
 protected:
 
     //monitoraggio postazione, servizi per il seggio
