@@ -230,32 +230,52 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
 
     case servizi::setAssociation:{
 
-        int success = -1;
-        unsigned int idHT;
-        unsigned int ruoloVotante;
+        int success = 1;
+        bool erroreRicezioneDati = false;
+        string snHT;
+        unsigned int idTipoVotante;
+        string usernameHT;
+        string passwordHT;
 
         //ricevi ht da settare
-        string ht;
-        receiveString_SSL(ssl,ht);
-        idHT = atoi(ht.c_str());
+        if(receiveString_SSL(ssl,snHT)==0){
+            erroreRicezioneDati = true;
+        }
         pvChiamante->mutex_stdout.lock();
-        cout << "ServerPV: ht da settare: " << idHT << endl;
+        cout << "ServerPV: ht da settare: " << snHT << endl;
         pvChiamante->mutex_stdout.unlock();
 
-        //ricevi ruoloVotante
-        string strRuolo;
-        receiveString_SSL(ssl,strRuolo);
-        ruoloVotante = atoi(strRuolo.c_str());
-        pvChiamante->setTipoElettore(ruoloVotante);
+        //ricevi idTipoVotante
+        string strTipo;
+        if(receiveString_SSL(ssl,strTipo)!=0){
+            idTipoVotante = atoi(strTipo.c_str());
+        }
+        else{
+            erroreRicezioneDati = true;
+        }
 
         //ricevi matricola votante
         string strMatricola;
-        receiveString_SSL(ssl,strMatricola);
+        if(receiveString_SSL(ssl,strMatricola)==0){
+            erroreRicezioneDati = true;
+        }
+
+        //ricezione usernameHT
+        if(receiveString_SSL(ssl,usernameHT)!=0){
+            erroreRicezioneDati = true;
+        }
+
+        //ricezione passwordHT
+        if(receiveString_SSL(ssl,passwordHT)!=0){
+            erroreRicezioneDati = true;
+        }
 
 
-        if(pvChiamante->setHTAssociato(idHT)){ //restituisce true se l'esito dell'operazione è positivo
+        if(!erroreRicezioneDati && pvChiamante->setHTAssociato(snHT,usernameHT,passwordHT)){ //restituisce true se l'esito dell'operazione è positivo
             success = 0;
+            //settiamo le altre informazioni relative al votante
             pvChiamante->setMatricolaVotante(atoi(strMatricola.c_str()));
+            pvChiamante->setIdTipoVotante(idTipoVotante);
             pvChiamante->setStatoPV(pvChiamante->statiPV::attesa_abilitazione);
         }
 
@@ -286,7 +306,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         SSL_write(ssl, charArray_statoPV, strlen(charArray_statoPV));
 
 
-       uint stato = atoi(charArray_statoPV);
+        uint stato = atoi(charArray_statoPV);
         if(stato == pvChiamante->statiPV::offline){
             pvChiamante->tryConnectUrna();
         }

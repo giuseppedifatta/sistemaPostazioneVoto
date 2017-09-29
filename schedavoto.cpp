@@ -3,9 +3,8 @@
 using namespace std;
 SchedaVoto::SchedaVoto()
 {
-    modalitaAdd=SchedaVoto::modoAdd::candidato;
+    modalitaAdd = SchedaVoto::modoAdd::candidato;
     numeroLista = 0;
-
     //id della procedura a cui la scheda di voto è associata
 
 }
@@ -34,26 +33,12 @@ void SchedaVoto::addLista(std::string nomeLista)
 {
     numeroLista++;
     uint numLista = numeroLista;
-    ListaElettorale l(nomeLista,numLista);
+    ListaElettorale l(nomeLista, numLista);
     this->listeElettorali.push_back(l);
 }
 
 vector <Candidato> SchedaVoto::removeLista(uint index)
 {
-
-    //    std::string gruppo = this->listListe.at(index);
-    //    for (uint i = 0; i < listCandidati.size(); i++){
-    //        if(listCandidati.at(i).getLista() == gruppo){
-    //            cout << listCandidati.at(i).getLista();
-    //            removeCandidato(i);
-    //            //riprendi la scansione dall'elemento precedente, poichè il vettore avrà un elemento in meno dopo la rimozione dell'elemento di posizione i
-    //            i--;
-
-    //        }
-    //    }
-
-    //    this->listListe.erase(listListe.begin()+index);
-
 
     //restituisce il vettore dei candidati da rimuovere dalla struttura schedaVoto
     ListaElettorale listaToRemove  = listeElettorali.at(index);
@@ -64,35 +49,14 @@ vector <Candidato> SchedaVoto::removeLista(uint index)
 
 
 
-//std::vector<std::string> SchedaVoto::getListListe() const
-//{
-//    return listListe;
-//}
 
-//void SchedaVoto::setListListe(const std::vector<std::string> &value)
-//{
-//    listListe = value;
-//}
-
-unsigned int SchedaVoto::getTipoElezione() const
-{
-    return tipoElezione;
-}
-
-void SchedaVoto::setTipoElezione(unsigned int value)
-{
-    tipoElezione = value;
-}
 
 std::vector<ListaElettorale> SchedaVoto::getListeElettorali() const
 {
     return listeElettorali;
 }
 
-//void SchedaVoto::setListeElettorali(const std::vector<ListaElettorale> &value)
-//{
-//    listeElettorali = value;
-//}
+
 bool SchedaVoto::addCandidato
 (string matricola, string nome, string cognome,string lista, string data, string luogo)
 {
@@ -190,4 +154,44 @@ void SchedaVoto::setIdProceduraVoto(unsigned int value)
     idProceduraVoto = value;
 }
 
+
+bool SchedaVoto::soloCandidatiMode() const
+{
+    return soloCandidati;
+}
+
+void SchedaVoto::soloCandidatiOn()
+{
+    this->soloCandidati = true;
+}
+
+void SchedaVoto::soloCandidatiOff()
+{
+    this->soloCandidati = false;
+}
+
+std::vector<uint> SchedaVoto::getIdTipiVotantiConsentiti() const
+{
+    return idTipiVotantiConsentiti;
+}
+
+//void SchedaVoto::setIdTipiVotantiConsentiti(const std::vector<uint> &value)
+//{
+//    idTipiVotantiConsentiti = value;
+//}
+
+void SchedaVoto::addIdTipiVotantiConsentiti(uint id)
+{
+    idTipiVotantiConsentiti.push_back(id);
+}
+
+string SchedaVoto::getDescrizioneElezione() const
+{
+    return descrizioneElezione;
+}
+
+void SchedaVoto::setDescrizioneElezione(const string &value)
+{
+    descrizioneElezione = value;
+}
 

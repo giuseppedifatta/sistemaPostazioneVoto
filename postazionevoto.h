@@ -36,6 +36,7 @@
 #include "schedavoto.h"
 #include "schedacompilata.h"
 
+
 using namespace std;
 using namespace tinyxml2;
 using namespace CryptoPP;
@@ -91,7 +92,7 @@ public:
     mutex mutex_statoPV;
     QMutex mutex_run_server;
 
-    bool setHTAssociato(unsigned int tokenCod);
+    bool setHTAssociato(string tokenCod, string username, string password);
     void resetHT();
     void backToPostazioneAttiva();
     void setIdProceduraVoto(uint idProcedura);
@@ -145,7 +146,7 @@ private:
 
     //vector <SchedaCompilata> schedeDaInviare;
     //unsigned int timeout;
-    unsigned int HTAssociato; // non assegnato all'atto dell'inizializzazione
+    string HTAssociato; // non assegnato all'atto dell'inizializzazione
 
     statiPV statoPV;
 
@@ -176,7 +177,7 @@ protected:
 
     bool voteAuthorizationWithOTP();
 
-    unsigned int getHTAssociato();
+    string getHTAssociato();
 
     unsigned int getIdPostazioneVoto();
 

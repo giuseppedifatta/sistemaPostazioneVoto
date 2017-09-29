@@ -22,14 +22,12 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(this, SIGNAL(stopThreads()), pv, SLOT(stopServerPV()));
     QObject::connect(pv, SIGNAL(wrongPassKey()),this, SLOT(messageErrorPassword()));
     QObject::connect(this,SIGNAL(needSchede()),pv,SLOT(selectSchedeDaMostrare()));
-    //    qRegisterMetaType< vector<SchedaVoto>>( "vector<SchedaVoto>" );
-    //    qRegisterMetaType< vector<SchedaCompilata>>( "vector<SchedaCompilata>" );
+
     QObject::connect(pv,SIGNAL(giveSchedeToView(vector<SchedaVoto>)),this,SLOT(receiveSchedeToShow(vector<SchedaVoto>)));
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna2(vector<SchedaCompilata>)));//secondo metodo di invio settato come risposta al signal di invio
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
     QObject::connect(pv,SIGNAL(wrongOTP()),SLOT(showErrorOTP()));
-    //QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showInterfaceUrnaOffline()));
-    //QObject::connect(pv,SIGNAL(urnaNonRaggiungibile()),this,SLOT(showMessageUrnaNonRaggiungibile()));
+
     //avvio il thread del model
     pv->start();
 
@@ -52,7 +50,6 @@ void MainWindowPV::on_exit_button_clicked()
 void MainWindowPV::on_attiva_button_clicked()
 {
     ui->wrongPassword_label->hide();
-    //TODO
     //usare la password inserita come chiave di sessione per calcolare un valore mac
     //sul valore della procedura di voto e inviarlo all'urna
     QString passKey = ui->passwordPV_lineEdit->text();
@@ -60,18 +57,6 @@ void MainWindowPV::on_attiva_button_clicked()
     //segnalazione al model, per il controllo della passKey
     emit checkPassKey(passKey);
 
-    //spostare su una funzione di tipo public slots, chiamata dalla postazione attraverso un signale, passando il valore bool riguardante l'esito della verifica della passKey
-    //    if(passKey=="pv1"){
-    //        ui->stackedWidget->setCurrentIndex(InterfaccePV::disponibile);
-    //
-    //        pv->setStatoPV(PostazioneVoto::libera);
-    //        cout << "View: postazione attiva" << endl;
-    //        //avvio server in ascolto del seggio
-    //        pv->runServicesToSeggio();
-    //    }
-    //    else{
-    //
-    //    }
 }
 
 void MainWindowPV::mostraInterfacciaAbilitazioneWithOTP(){
@@ -85,10 +70,9 @@ void MainWindowPV::mostraInterfacciaPostazioneAttiva(){
 void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
 {
     this->schedeVotoDaMostrare = schede;
-    //TODO calcola quali e quante schede mostrare all'elettore attivo corrente
-    indiceSchedaDaMostrare = 0;
+    this->indiceSchedaDaMostrare = 0;
+    this->schedeCompilate.clear();
     mostraScheda();
-
 
 }
 
@@ -100,21 +84,6 @@ void MainWindowPV::showErrorOTP()
     ui->codiceOTP_lineEdit->clear();
 }
 
-//void MainWindowPV::showInterfaceUrnaOffline()
-//{
-//    ui->stackedWidget->setCurrentIndex(InterfaccePV::offline);
-//}
-
-//void MainWindowPV::showMessageUrnaUnreachable()
-//{
-//    if(ui->stackedWidget->currentIndex()!=InterfaccePV::offline){
-//        QMessageBox msgBox(this);
-//        msgBox.setInformativeText("Impossibile comunicare con l'Urna, rivolgersi alla commissione");
-//        msgBox.exec();
-//    }
-//}
-
-
 void MainWindowPV::mostraScheda(){
     addingElementToListWidget = true;
     //aggiorniamo testo da mostrare sul bottone per la successiva scheda o l'invio dei voti
@@ -125,7 +94,9 @@ void MainWindowPV::mostraScheda(){
         ui->pushButton_nextSend->setText("Invia all'urna");
     }
 
+    //puliamo il listWidget_scheda da eventuali dati precedenti
     ui->listWidget_scheda->clear();
+
     QFont serifFont("Times", 20, QFont::Bold);
     SchedaVoto schedaCorrente = schedeVotoDaMostrare.at(indiceSchedaDaMostrare);
     uint codProcedura = schedaCorrente.getIdProceduraVoto();
@@ -134,11 +105,11 @@ void MainWindowPV::mostraScheda(){
     //item->setFont(serifFont);
     ui->label_procedura_value->setText(QString::number(codProcedura));
 
-    uint codScheda = schedaCorrente.getId();
+    string descScheda = schedaCorrente.getDescrizioneElezione();
     //    item = new QListWidgetItem("Codice scheda: " +
     //                               QString::number(codScheda),ui->listWidget_scheda);
     //    item->setFont(serifFont);
-    ui->label_numeroSchedaValue->setText(QString::number(codScheda));
+    ui->label_numeroSchedaValue->setText(QString::fromStdString(descScheda));
 
     uint numeroPreferenze = schedaCorrente.getNumPreferenze();
     //    item = new QListWidgetItem("Numero preferenze: " +
@@ -149,8 +120,6 @@ void MainWindowPV::mostraScheda(){
     numPreferenzeChecked = 0;
     cout << "View:Numero preferenze selezionate: " << numPreferenzeChecked << endl;
 
-    uint tipologiaElezione = schedaCorrente.getTipoElezione();
-    ui->label_tipologiaElezioneValue->setText(QString::number(tipologiaElezione));
 
     vector <ListaElettorale> liste = schedaCorrente.getListeElettorali();
     for (uint listaIndex = 0; listaIndex < liste.size() ; listaIndex++){
@@ -288,21 +257,21 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
         }
     }
 
-    schedeCompilate.push_back(sc);
+    this->schedeCompilate.push_back(sc);
 
     //verifica se bisogna mostra la scheda successiva, o se
     //quella mostrata era l'ultima e bisogna procedere all'invio
     //delle schede compilate
-    uint indiceSchedaMostrata = indiceSchedaDaMostrare;
-    if(indiceSchedaMostrata < (schedeVotoDaMostrare.size()-1)){
-        indiceSchedaDaMostrare++;
+    uint indiceSchedaMostrata = this->indiceSchedaDaMostrare;
+    if(indiceSchedaMostrata < (this->schedeVotoDaMostrare.size()-1)){
+        this->indiceSchedaDaMostrare++;
         mostraScheda();
     }
     else{
         cout << "View:View: sto emettondo il segnale per il thread PV, il quale dovrà occuparsi dell'invio delle schede"  << endl;
 
         emit inviaSchedeCompilate(schedeCompilate);
-        schedeCompilate.clear();
+        this->schedeCompilate.clear();
     }
 
 
@@ -319,14 +288,14 @@ void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
     string matricola = var.toString().toStdString();
     cout << "View:Item's matricola: " << matricola << endl;
     if(item->checkState()==Qt::CheckState::Checked){
-        numPreferenzeChecked++;
+        this->numPreferenzeChecked++;
 
     }
     else if (item->checkState()==Qt::CheckState::Unchecked){
-        numPreferenzeChecked--;
+        this->numPreferenzeChecked--;
     }
 
-    if(numPreferenzeChecked>numPreferenzeMax){
+    if(this->numPreferenzeChecked > this->numPreferenzeMax){
         ui->pushButton_nextSend->setEnabled(false);
         QMessageBox msgBox(this);
         msgBox.setInformativeText("Hai superato il numero di preferenze massime consentito. Deseleziona almeno una preferenza.");
@@ -336,16 +305,13 @@ void MainWindowPV::on_listWidget_scheda_itemChanged(QListWidgetItem *item)
     else{
         ui->pushButton_nextSend->setEnabled(true);
     }
-    cout << "View:Preferenze massime:" << numPreferenzeMax << endl;
-    cout << "View:Numero preferenze selezionate: " << numPreferenzeChecked << endl;
+    cout << "View:Preferenze massime:" << this->numPreferenzeMax << endl;
+    cout << "View:Numero preferenze selezionate: " << this->numPreferenzeChecked << endl;
 }
 
 void MainWindowPV::on_confermaOTP_button_clicked()
 {
     QString otp = ui->codiceOTP_lineEdit->text();
-
-    //TODO check codice otp sul server
-
 
     emit checkOTP(otp);
     ui->codiceOTP_lineEdit->clear();

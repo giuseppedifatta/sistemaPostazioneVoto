@@ -26,6 +26,7 @@ private:
     vector <SchedaCompilata> schedeCompilate;
     uint numPreferenzeChecked;
     uint numPreferenzeMax;
+
     //mettendo a true questa variabile, si blocca il trigger degli
     //eventi checked e unchecked durante l'aggiunta degli elementi
     //alla schermata di visualizzazione delle schede per il voto
@@ -57,6 +58,7 @@ private slots:
     void on_listWidget_scheda_itemChanged(QListWidgetItem *item);
 
     void on_confermaOTP_button_clicked();
+
 
 public slots:
     void updateInterfaccia(unsigned int statoPV);

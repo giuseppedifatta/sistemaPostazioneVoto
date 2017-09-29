@@ -7,11 +7,12 @@
 
 #include "postazionevoto.h"
 #include "openotp_login.h"
+
 int verifyMAC(string encodedSessionKey,string data, string macEncoded);
 PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
     //mainWindow = m;
-    HTAssociato = 0;
+    HTAssociato = "";
 
     attivata = false;
 
@@ -104,11 +105,12 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
     return true;
 }
 
-bool PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
-    if(this->HTAssociato == 0){ //nessun token associato
+bool PostazioneVoto::setHTAssociato(string tokenCod, string username, string password) {
+    if(this->HTAssociato == ""){ //nessun token associato
         this->HTAssociato = tokenCod;
+        this->usernameHTAssociato = username;
+        this->passwordHTAssociato = password;
 
-        //TODO contattare l'otp Server Provider per comunicare l'id dell'HT da abbinare ad una certa postazione di voto
 
         return true;
     }
@@ -120,10 +122,10 @@ bool PostazioneVoto::setHTAssociato(unsigned int tokenCod) {
 
 void PostazioneVoto::resetHT()
 {
-    this->HTAssociato = 0;
+    this->HTAssociato = "";
 }
 
-unsigned int PostazioneVoto::getHTAssociato() {
+string PostazioneVoto::getHTAssociato() {
     return this->HTAssociato;
 }
 
@@ -198,9 +200,18 @@ void PostazioneVoto::selectSchedeDaMostrare()
     vector <SchedaVoto> schedeDaMostrare;
 
     for (unsigned int i = 0; i < schedeVoto.size(); i++){
-        //TODO seleziona la scheda se l'elettore corrente assegnato alla postazione può votare per questa scheda
+        //seleziona la scheda se l'elettore corrente assegnato alla postazione può votare per questa scheda
+       vector<uint> idTipoVotanti = schedeVoto.at(i).getIdTipiVotantiConsentiti();
+       for(uint t = 0; t < idTipoVotanti.size(); t++){
+           if(idTipoVotante == idTipoVotanti.at(i)){
 
-        schedeDaMostrare.push_back(schedeVoto.at(i));
+               schedeDaMostrare.push_back(schedeVoto.at(i));
+               break;
+           }
+       }//se arriviamo alla fine di questo for, l'idTipoVotante non è presente nella scheda corrente,
+       //la scheda corrente non viene selezionata tra quelle che devono essere compilate dal votante corrente
+
+
     }
 
     //this->setStatoPV(statiPV::votazione_in_corso);
@@ -809,16 +820,42 @@ void PostazioneVoto::addScheda(string scheda)
     cout << "PV: idScheda: " << idScheda << endl;
     sv.setId(idScheda);
 
-    XMLText* textNodeTipologiaElezione= rootNode->FirstChildElement("tipologiaElezione")->FirstChild()->ToText();
-    uint tipologiaElezione = atoi(textNodeTipologiaElezione->Value());
-    cout << "PV: tipologia elezione: " << tipologiaElezione << endl;
-    sv.setTipoElezione(tipologiaElezione);
+    XMLText* textNodeDescrizioneElezione= rootNode->FirstChildElement("descrizioneElezione")->FirstChild()->ToText();
+    string descrizioneElezione = textNodeDescrizioneElezione->Value();
+    cout << "descrizione elezione: " << descrizioneElezione << endl;
+    sv.setDescrizioneElezione(descrizioneElezione);
 
     XMLText* textNodeNumeroPreferenze = rootNode->FirstChildElement("numeroPreferenze")->FirstChild()->ToText();
     uint numeroPreferenze = atoi(textNodeNumeroPreferenze->Value());
     cout << "PV: Numero preferenze: " << numeroPreferenze << endl;
     sv.setNumPreferenze(numeroPreferenze);
 
+    //parsing degli idTipiVotanti
+    XMLElement * tipiVotantiElement = rootNode->FirstChildElement("tipiVotanti");
+
+    XMLElement * firstIdTipoVotantiElement = tipiVotantiElement->FirstChildElement("idTipoVotanti");
+    XMLElement * lastIdTipoVotantiElement = tipiVotantiElement->LastChildElement("idTipoVotanti");
+
+    XMLElement *idTipoVotantiElement = firstIdTipoVotantiElement;
+    bool lastIdTipoVotanti = false;
+    do{
+
+        XMLText* textNodeIdTipoVotanti = idTipoVotantiElement->FirstChild()->ToText();
+        uint idTipoVotanti = atoi(textNodeIdTipoVotanti->Value());
+        cout << "Id tipo Votanti: " << idTipoVotanti << endl;
+        sv.addIdTipiVotantiConsentiti(idTipoVotanti);
+
+
+        if(idTipoVotantiElement == lastIdTipoVotantiElement){
+            lastIdTipoVotanti = true;
+        }
+        else{
+            //accediamo alla successiva lista nella scheda di voto
+            idTipoVotantiElement = idTipoVotantiElement->NextSiblingElement("idTipoVotanti");
+            cout << "ottengo il puntatore al successivo idTipoVotanti" << endl;
+        }
+    }while(!lastIdTipoVotanti);
+    cout << "non ci sono altri idTipoVotanti" << endl;
 
     XMLElement * listeElement = rootNode->FirstChildElement("liste");
 
@@ -946,16 +983,6 @@ void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
     rsaPublicKeyRP.Load(ss);
 
     cout << "PV: la chiave publica di RP è stata salvata sulla postazione" << endl;
-}
-
-unsigned int PostazioneVoto::getTipoElettore() const
-{
-    return tipoElettore;
-}
-
-void PostazioneVoto::setTipoElettore(unsigned int value)
-{
-    tipoElettore = value;
 }
 
 

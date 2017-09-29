@@ -84,7 +84,7 @@ background-color: white;
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>5</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="attivazione_page">
        <layout class="QVBoxLayout" name="verticalLayout_3">
