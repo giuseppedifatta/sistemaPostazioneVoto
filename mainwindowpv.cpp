@@ -242,10 +242,12 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
     sc.setIdScheda(codScheda);
     uint idProcedura = ui->label_procedura_value->text().toUInt();
     sc.setIdProcedura(idProcedura);
-    uint tipologiaElezione = ui->label_tipologiaElezioneValue->text().toUInt();
-    sc.setTipologiaElezione(tipologiaElezione);
+    string descrizioneElezione = ui->label_descrizioneSchedaValue->text().toStdString();
+    sc.setDescrizioneElezione(descrizioneElezione);
     uint numPreferenze = ui->label_numeroPreferenzeValue->text().toUInt();
     sc.setNumPreferenze(numPreferenze);
+
+    //informazione idSeggio inserita all'atto di creazione del file xml relativo alla scheda compilata
 
     //aggiungo alla scheda compilata le matricole preferenza selezionate dall'elettore attivo
     for(int i = 0; i < ui->listWidget_scheda ->count(); ++i)

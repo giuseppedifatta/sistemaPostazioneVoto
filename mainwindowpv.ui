@@ -283,12 +283,12 @@ background-color: white;
             <item row="0" column="0">
              <widget class="QLabel" name="label_tipologiaElezione">
               <property name="text">
-               <string>Tipologia Elezione</string>
+               <string>Descrizione Scheda</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLabel" name="label_tipologiaElezioneValue">
+             <widget class="QLabel" name="label_descrizioneSchedaValue">
               <property name="text">
                <string>TextLabel</string>
               </property>

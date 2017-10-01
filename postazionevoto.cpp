@@ -423,9 +423,14 @@ void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCom
     pElement->SetText(idProceduraVoto);
     pRoot->InsertEndChild(pElement);
 
-    uint tipoElezione = scheda.getTipologiaElezione();
-    pElement = xmlDoc->NewElement("tipologiaElezione");
-    pElement->SetText(tipoElezione);
+    uint idSeggio = this->idSeggio;
+    pElement = xmlDoc->NewElement("idSeggio");
+    pElement->SetText(idSeggio);
+    pRoot->InsertEndChild(pElement);
+
+    string descrizioneElezione = scheda.getDescrizioneElezione();
+    pElement = xmlDoc->NewElement("descrizioneElezione");
+    pElement->SetText(descrizioneElezione.c_str());
     pRoot->InsertEndChild(pElement);
 
     uint numPref = scheda.getNumPreferenze();
@@ -797,6 +802,16 @@ uint PostazioneVoto::getIdTipoVotante() const
 void PostazioneVoto::setIdTipoVotante(const uint &value)
 {
     idTipoVotante = value;
+}
+
+uint PostazioneVoto::getIdSeggio() const
+{
+    return idSeggio;
+}
+
+void PostazioneVoto::setIdSeggio(const uint &value)
+{
+    idSeggio = value;
 }
 
 void PostazioneVoto::addScheda(string scheda)

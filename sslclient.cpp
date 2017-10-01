@@ -552,6 +552,8 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     else{
         pvChiamante->setIdProceduraVoto(idProcedura);
     }
+
+
     cout << "ClientPV: La procedura in corso ha id: " << idProcedura << endl;
     string idProceduraMAC = pvChiamante->calcolaMAC(sessionKey, to_string(idProcedura));
 
@@ -581,7 +583,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
 
     }
 
-    //se l'attivazione ha avuto successo ricevo le schede dall'urna e la chiave pubblica di RP
+    //se l'attivazione ha avuto successo ricevo le schede dall'urna, la chiave pubblica di RP e l'id del Seggio a cui appartiene questa postazione
     if(attivata){
         //ricevo numero schede da ricevere
         string str;
@@ -631,6 +633,15 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
                 attivata = false; //ricezione chiave pubblica RP non riuscita
             }
         }
+//        if (attivata){
+//            //ricevo id Seggio di appartenenza
+//            string seggio;
+//            if(receiveString_SSL(ssl, seggio)!=0){
+//                uint idSeggio = atoi(seggio.c_str());
+//                pvChiamante->setIdSeggio(idSeggio);
+//            }
+//        }
+
 
     }
     return attivata;

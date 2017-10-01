@@ -122,10 +122,14 @@ public:
     uint getIdTipoVotante() const;
     void setIdTipoVotante(const uint &value);
 
+    uint getIdSeggio() const;
+    void setIdSeggio(const uint &value);
+
 private:
     bool attivata;
     const char * ipUrna;
     const char * postazioneSeggio;
+    uint idSeggio;
     //dati membro
 
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"

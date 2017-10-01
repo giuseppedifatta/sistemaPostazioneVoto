@@ -30,15 +30,6 @@ void SchedaCompilata::setNumPreferenze(const uint &value)
     numPreferenze = value;
 }
 
-uint SchedaCompilata::getTipologiaElezione() const
-{
-    return tipologiaElezione;
-}
-
-void SchedaCompilata::setTipologiaElezione(const uint &value)
-{
-    tipologiaElezione = value;
-}
 
 void SchedaCompilata::addMatricolaPreferenza(string matricolaPreferenza)
 {
@@ -60,8 +51,28 @@ void SchedaCompilata::setIdScheda(const uint &value)
     idScheda = value;
 }
 
+uint SchedaCompilata::getIdSeggio() const
+{
+    return idSeggio;
+}
+
+void SchedaCompilata::setIdSeggio(const uint &value)
+{
+    idSeggio = value;
+}
+
+string SchedaCompilata::getDescrizioneElezione() const
+{
+    return descrizioneElezione;
+}
+
+void SchedaCompilata::setDescrizioneElezione(const string &value)
+{
+    descrizioneElezione = value;
+}
+
 SchedaCompilata::SchedaCompilata()
 {
-    
+    idSeggio = 0; // da aggiornare con l'idSeggio effettivo di appartenenza della postazione di voto all'atto di creazione del file xml
 }
 

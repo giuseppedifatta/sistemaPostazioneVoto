@@ -11,7 +11,8 @@ private:
     uint idProcedura;
     uint numPreferenze;
     uint idScheda;
-    uint tipologiaElezione;
+    string descrizioneElezione;
+    uint idSeggio;
 
 public:
     SchedaCompilata();
@@ -21,12 +22,15 @@ public:
     void setIdProcedura(const uint &value);
     uint getNumPreferenze() const;
     void setNumPreferenze(const uint &value);
-    uint getTipologiaElezione() const;
-    void setTipologiaElezione(const uint &value);
     void addMatricolaPreferenza(string matricolaPreferenza);
     vector<string> getMatricolePreferenze() const;
     uint getIdScheda() const;
     void setIdScheda(const uint &value);
+    uint getIdSeggio() const;
+    void setIdSeggio(const uint &value);
+
+    string getDescrizioneElezione() const;
+    void setDescrizioneElezione(const string &value);
 };
 
 #endif // SCHEDACOMPILATA_H
