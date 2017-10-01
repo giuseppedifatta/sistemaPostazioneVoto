@@ -18,8 +18,8 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
 
     //TODO calcolare dall'indirizzo IP
     idPostazioneVoto = 1;
-
-    postazioneSeggio = "192.168.56.100"; //TODO ricavare l'IP della postazione seggio a cui la postazione voto appartiene
+    string myIP = this->getIPbyInterface("enp0s8");
+    postazioneSeggio = calcolaIpSeggio(myIP).c_str(); //TODO ricavare l'IP della postazione seggio a cui la postazione voto appartiene
     ipUrna = "192.168.19.130";
     //init client
     //this->pv_client = new SSLClient(this);
@@ -564,6 +564,25 @@ string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::
     return encodedCipher;
 }
 
+string PostazioneVoto::calcolaIpSeggio(string ipPostazione)
+{
+    int byte1, byte2, byte3, byte4;
+    char dot;
+    istringstream s(ipPostazione);  // input stream that now contains the ip address string
+
+    s >> byte1 >> dot >> byte2 >> dot >> byte3 >> dot >> byte4 >> dot;
+
+    //estraiamo il valore in modulo 4 del byte meno significato dell'indirizzo ip
+    int resto = byte4 % 4;
+
+    //sottriamo a byte4 per ottenere l'indirizzo di sottorete del seggio
+    int byte4Seggio = byte4-resto;
+
+    string ipSeggio = to_string(byte1) + "." + to_string(byte2) + "." + to_string(byte3) + "." +  to_string(byte4Seggio);
+    cout << "PV: ip del seggio di appartenenza: " << ipSeggio << endl;
+    return ipSeggio;
+}
+
 void PostazioneVoto::validatePassKey(QString pass)
 {
     //contatto l'urna per validare la password
@@ -1009,4 +1028,40 @@ uint PostazioneVoto::getMatricolaVotante() const
 void PostazioneVoto::setMatricolaVotante(const uint &value)
 {
     matricolaVotante = value;
+}
+
+string PostazioneVoto::getIPbyInterface(const char * interfaceName){
+    struct ifaddrs *ifaddr, *ifa;
+    int /*family,*/ s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == NULL)
+            continue;
+
+        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+        if((strcmp(ifa->ifa_name,interfaceName)==0)&&(ifa->ifa_addr->sa_family==AF_INET))
+        {
+            if (s != 0)
+            {
+                printf("getnameinfo() failed: %s\n", gai_strerror(s));
+                exit(EXIT_FAILURE);
+            }
+            printf("\tInterface : <%s>\n",ifa->ifa_name );
+            printf("\t  Address : <%s>\n", host);
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    string ip_host = host;
+    return ip_host;
 }

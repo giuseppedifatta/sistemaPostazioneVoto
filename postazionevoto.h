@@ -125,6 +125,7 @@ public:
     uint getIdSeggio() const;
     void setIdSeggio(const uint &value);
 
+    string getIPbyInterface(const char *interfaceName);
 private:
     bool attivata;
     const char * ipUrna;
@@ -167,6 +168,7 @@ private:
     void creaSchedaCompilataXML_AES(XMLDocument *xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv);
     string AESencryptStdString(string plain, SecByteBlock key, SecByteBlock iv);
     string RSAencryptSecByteBlock(SecByteBlock valueBlock, CryptoPP::RSA::PublicKey publicKey);
+    string calcolaIpSeggio(string ipPostazione);
 
 protected:
 

@@ -527,7 +527,7 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio mio ip
-    string my_ip = this->getIPbyInterface("enp0s8");
+    string my_ip = pvChiamante->getIPbyInterface("enp0s8");
     sendString_SSL(ssl,my_ip);
 
     //ricevo idProceduraVoto
@@ -633,14 +633,25 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
                 attivata = false; //ricezione chiave pubblica RP non riuscita
             }
         }
-//        if (attivata){
-//            //ricevo id Seggio di appartenenza
-//            string seggio;
-//            if(receiveString_SSL(ssl, seggio)!=0){
-//                uint idSeggio = atoi(seggio.c_str());
-//                pvChiamante->setIdSeggio(idSeggio);
-//            }
-//        }
+        if (attivata){
+            //ricevo id Seggio di appartenenza
+            string seggio;
+            receiveString_SSL(ssl, seggio);
+
+            string encodedMAC;
+            receiveString_SSL(ssl,encodedMAC);
+            int verified = pvChiamante->verifyMAC(sessionKey,seggio,encodedMAC);
+            if(verified == 0){//MAC chiave pubblica RP verifcato
+                uint idSeggio = atoi(seggio.c_str());
+                pvChiamante->setIdSeggio(idSeggio);
+            }
+            else{
+                attivata = false; //ricezione chiave pubblica RP non riuscita
+            }
+
+
+
+        }
 
 
     }
@@ -660,7 +671,7 @@ void SSLClient::richiestaServizioInvioSchede(uint numSchede){
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio mio ip
-    string my_ip = this->getIPbyInterface("enp0s8");
+    string my_ip = pvChiamante->getIPbyInterface("enp0s8");
     sendString_SSL(ssl,my_ip);
 
 
@@ -810,38 +821,4 @@ void SSLClient::sendString_SSL(SSL* ssl, string s) {
     SSL_write(ssl, s.c_str(), length);
 }
 
-string SSLClient::getIPbyInterface(const char * interfaceName){
-    struct ifaddrs *ifaddr, *ifa;
-    int /*family,*/ s;
-    char host[NI_MAXHOST];
 
-    if (getifaddrs(&ifaddr) == -1)
-    {
-        perror("getifaddrs");
-        exit(EXIT_FAILURE);
-    }
-
-
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
-    {
-        if (ifa->ifa_addr == NULL)
-            continue;
-
-        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-
-        if((strcmp(ifa->ifa_name,interfaceName)==0)&&(ifa->ifa_addr->sa_family==AF_INET))
-        {
-            if (s != 0)
-            {
-                printf("getnameinfo() failed: %s\n", gai_strerror(s));
-                exit(EXIT_FAILURE);
-            }
-            printf("\tInterface : <%s>\n",ifa->ifa_name );
-            printf("\t  Address : <%s>\n", host);
-        }
-    }
-
-    freeifaddrs(ifaddr);
-    string ip_host = host;
-    return ip_host;
-}
