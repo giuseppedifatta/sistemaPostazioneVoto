@@ -230,7 +230,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
 
     case servizi::setAssociation:{
 
-        int success = 1;
+
         bool erroreRicezioneDati = false;
         string snHT;
         unsigned int idTipoVotante;
@@ -270,7 +270,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
             erroreRicezioneDati = true;
         }
 
-
+        int success = 1;
         if(!erroreRicezioneDati && pvChiamante->setHTAssociato(snHT,usernameHT,passwordHT)){ //restituisce true se l'esito dell'operazione è positivo
             success = 0;
             //settiamo le altre informazioni relative al votante
@@ -315,7 +315,8 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
     case servizi::removeAssociation:{
         int success = -1;
         if( (pvChiamante->getStatoPV() == pvChiamante->statiPV::attesa_abilitazione)
-                || (pvChiamante->getStatoPV() == pvChiamante->statiPV::offline) ){
+                || (pvChiamante->getStatoPV() == pvChiamante->statiPV::offline)
+                || (pvChiamante->getStatoPV() == pvChiamante->statiPV::errore)){
             //imposta stato postazione a libera
 
             pvChiamante->resetHT();

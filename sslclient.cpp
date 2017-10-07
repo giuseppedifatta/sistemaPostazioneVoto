@@ -736,15 +736,23 @@ bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
 
     //esito operazione di invio voti
     string s;
-    receiveString_SSL(ssl, s);
+    int success = 0;
+    if(receiveString_SSL(ssl, s)!=0){
 
-    int success = atoi(s.c_str());
+        success = atoi(s.c_str());
 
-    if(success == 0){
-        return true;
+
+        if(success == 0){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
-    else
+    else {
         return false;
+    }
+
 }
 
 //bool SSLClient::setVoted(uint matricola)
@@ -778,7 +786,7 @@ bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
 
 
 
-void SSLClient::testConnection(){
+bool SSLClient::testConnection(){
     //richiesta servizio
     int serviceCod = serviziUrna::checkConnection;
     stringstream ssCod;
@@ -790,6 +798,16 @@ void SSLClient::testConnection(){
     pvChiamante->mutex_stdout.unlock();
     SSL_write(ssl,charCod,strlen(charCod));
 
+
+    string connectionOK;
+    if(receiveString_SSL(ssl,connectionOK)!=0){
+        if (connectionOK == "ok"){
+            return true;
+        }
+        else return false;
+    }
+
+    return false;
     //nothing to do
 }
 

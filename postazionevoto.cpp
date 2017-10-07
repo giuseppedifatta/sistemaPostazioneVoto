@@ -8,7 +8,7 @@
 #include "postazionevoto.h"
 #include "openotp_login.h"
 
-int verifyMAC(string encodedSessionKey,string data, string macEncoded);
+
 PostazioneVoto::PostazioneVoto(QObject *parent) :
     QThread(parent){
     //mainWindow = m;
@@ -17,9 +17,9 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     attivata = false;
 
     //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 1;
+    idPostazioneVoto = 1; //getIdPVbyMyIP()
     string myIP = this->getIPbyInterface("enp0s8");
-    postazioneSeggio = calcolaIpSeggio(myIP).c_str(); //TODO ricavare l'IP della postazione seggio a cui la postazione voto appartiene
+    postazioneSeggio = calcolaIpSeggio(myIP); //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
     ipUrna = "192.168.19.130";
     //init client
     //this->pv_client = new SSLClient(this);
@@ -35,12 +35,6 @@ PostazioneVoto::~PostazioneVoto() {
 
 }
 
-bool PostazioneVoto::PostazioneVoto::offlinePV() {
-    // se è possibile comunicare con l'Urna Virtuale ritorna true;
-    //se urna non raggiungibile
-    this->setStatoPV(statiPV::offline);
-    return true;
-}
 
 void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
 
@@ -106,18 +100,24 @@ bool PostazioneVoto::voteAuthorizationWithOTP() {
 }
 
 bool PostazioneVoto::setHTAssociato(string tokenCod, string username, string password) {
-    if(this->HTAssociato == ""){ //nessun token associato
-        this->HTAssociato = tokenCod;
-        this->usernameHTAssociato = username;
-        this->passwordHTAssociato = password;
 
 
-        return true;
+    if(this->tryConnectUrna()){
+
+        if(this->HTAssociato == ""){ //nessun token associato
+            this->HTAssociato = tokenCod;
+            this->usernameHTAssociato = username;
+            this->passwordHTAssociato = password;
+
+
+            return true;
+        }
+        else{
+            cerr << "PV: errore di impostazione dell'HT" << endl;
+            return false;
+        }
     }
-    else{
-        cerr << "PV: errore di impostazione dell'HT" << endl;
-        return false;
-    }
+    return false;
 }
 
 void PostazioneVoto::resetHT()
@@ -201,15 +201,15 @@ void PostazioneVoto::selectSchedeDaMostrare()
 
     for (unsigned int i = 0; i < schedeVoto.size(); i++){
         //seleziona la scheda se l'elettore corrente assegnato alla postazione può votare per questa scheda
-       vector<uint> idTipoVotanti = schedeVoto.at(i).getIdTipiVotantiConsentiti();
-       for(uint t = 0; t < idTipoVotanti.size(); t++){
-           if(idTipoVotante == idTipoVotanti.at(i)){
+        vector<uint> idTipoVotanti = schedeVoto.at(i).getIdTipiVotantiConsentiti();
+        for(uint t = 0; t < idTipoVotanti.size(); t++){
+            if(idTipoVotante == idTipoVotanti.at(i)){
 
-               schedeDaMostrare.push_back(schedeVoto.at(i));
-               break;
-           }
-       }//se arriviamo alla fine di questo for, l'idTipoVotante non è presente nella scheda corrente,
-       //la scheda corrente non viene selezionata tra quelle che devono essere compilate dal votante corrente
+                schedeDaMostrare.push_back(schedeVoto.at(i));
+                break;
+            }
+        }//se arriviamo alla fine di questo for, l'idTipoVotante non è presente nella scheda corrente,
+        //la scheda corrente non viene selezionata tra quelle che devono essere compilate dal votante corrente
 
 
     }
@@ -229,7 +229,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
     bool postazioneOffline = false;
 
     SSLClient * pv_client = new SSLClient(this);
-
+    const char * ipUrna = this->ipUrna.c_str();
     //mi collego all'urna
     if(pv_client->connectTo(ipUrna)!=nullptr){
 
@@ -268,8 +268,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
             string encryptedIV = RSAencryptSecByteBlock(iv,rsaPublicKeyRP);
             cout << "PV: encrypted IV: " << encryptedIV << endl;
 
-            //2. invio delle chiavi di cifratura della scheda
-            pv_client->invioKC_IVC(encryptedKey, encryptedIV);
+
 
             bool schedaStored = false;
 
@@ -280,6 +279,9 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                 cout << "PV: Invio nonce, scheda  e MAC del pacchetto: " << i+1 << endl;
                 cout << "PV: tentativo n. "  << tentativiInvio << endl;
                 //generazione nonce
+
+                //2. invio delle chiavi di cifratura della scheda
+                pv_client->invioKC_IVC(encryptedKey, encryptedIV);
 
                 Integer randomUint(rng,32);
                 std::stringstream ss;
@@ -383,25 +385,28 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
     }
 }
 
-void PostazioneVoto::tryConnectUrna()
+bool PostazioneVoto::tryConnectUrna()
 {
+    bool urnaRaggiungibile = false;
     SSLClient * pv_client = new SSLClient(this);
-
+    const char * ipUrna = this->ipUrna.c_str();
     if(pv_client->connectTo(ipUrna)!=nullptr){
-
-
-        pv_client->testConnection();
-        if(attivata){
-            setStatoPV(statiPV::libera);
-        }
-        else{
-            setStatoPV(statiPV::attesa_attivazione);
+        if(pv_client->testConnection()){
+            if(attivata){
+                setStatoPV(statiPV::libera);
+            }
+            else{
+                setStatoPV(statiPV::attesa_attivazione);
+            }
+            urnaRaggiungibile = true;
         }
     }
     else{
         setStatoPV(statiPV::offline);
     }
     delete pv_client;
+
+    return urnaRaggiungibile;
 }
 
 void PostazioneVoto::creaSchedaCompilataXML_AES(XMLDocument  * xmlDoc, SchedaCompilata scheda, SecByteBlock key, SecByteBlock iv){
@@ -583,13 +588,24 @@ string PostazioneVoto::calcolaIpSeggio(string ipPostazione)
     return ipSeggio;
 }
 
+void PostazioneVoto::inactivitySessionClose()
+{
+    //TODO funzione da richiamare con un thread
+
+    //sleep 5 minuti
+
+    //sleep conclusa
+
+    //richiamare stato di errore della postazione di voto
+}
+
 void PostazioneVoto::validatePassKey(QString pass)
 {
     //contatto l'urna per validare la password
 
 
     SSLClient * pv_client = new SSLClient(this);
-
+    const char * ipUrna = this->ipUrna.c_str();
     if(pv_client->connectTo(ipUrna)!=nullptr){
 
         if(pv_client->attivaPostazioneVoto(pass.toStdString())){
@@ -670,6 +686,10 @@ void PostazioneVoto::function_thread_sendStatoToSeggio(unsigned int statoPV){
 
 
     SSLClient * pv_client = new SSLClient(this);
+
+    //il thread non vede il valore dell'ip postazioneSeggio calcolato dalla postazione di voto, lo ricalcolo
+    //const char * postazioneSeggio = (this->calcolaIpSeggio(this->getIPbyInterface("enp0s8"))).c_str();
+    const char * postazioneSeggio = this->postazioneSeggio.c_str();
 
     if(pv_client->connectTo(postazioneSeggio)!=nullptr){
 

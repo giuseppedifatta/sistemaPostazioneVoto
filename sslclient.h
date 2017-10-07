@@ -81,7 +81,7 @@ public:
     bool attivaPostazioneVoto(string sessionKey);
     bool inviaSchedaCompilata(string schedaCifrata, string kc, string ivc, string nonce, string mac);
     //bool setVoted(uint matricola);
-    void testConnection();
+    bool testConnection();
 
     //verso OTPServerProvider
     void richiestaServizioInvioSchede(uint numSchede);

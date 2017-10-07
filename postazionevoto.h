@@ -106,9 +106,8 @@ public:
     void setRSAPublicKeyRP(const string &publicKeyEncoded);
 
 
-    unsigned int getTipoElettore() const;
-    void setTipoElettore(unsigned int value);
-    void tryConnectUrna();
+
+    bool tryConnectUrna();
     uint getMatricolaVotante() const;
     void setMatricolaVotante(const uint &value);
 
@@ -128,8 +127,8 @@ public:
     string getIPbyInterface(const char *interfaceName);
 private:
     bool attivata;
-    const char * ipUrna;
-    const char * postazioneSeggio;
+    string ipUrna;
+    string postazioneSeggio;
     uint idSeggio;
     //dati membro
 
@@ -140,7 +139,7 @@ private:
 
     unsigned int idProceduraVoto;
     vector <SchedaVoto> schedeVoto;
-    unsigned int tipoElettore;//in funzione di questo valore vanno selezionate le schede da mostrare per la compilazione
+
 
     //informazioni da ricevere dal seggio, nel momento in cui effettua il push dell'associazione
     string usernameHTAssociato;
@@ -172,12 +171,7 @@ private:
 
 protected:
 
-    //monitoraggio postazione, servizi per il seggio
-    bool feedbackFreeBusy();
-    bool offlinePV();
-
-
-    void inactivitySessionClose();
+     void inactivitySessionClose();
 
     //std::string getStatoPostazioneAsString();
 
@@ -191,9 +185,6 @@ protected:
 
     void pubEncrypt_publicKeyRP(unsigned int symKey, unsigned int iv);
 
-
-
-    XMLDocument symEncrypt_V(XMLDocument schedaVoto);
 
 };
 
