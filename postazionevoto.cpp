@@ -641,9 +641,9 @@ void PostazioneVoto::validateOTP(QString otp)
 {
 
     //contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
-    string url = "https://147.163.26.229:8443/openotp/";
-    string username = "user1.seggio1";
-    string password = "password";
+    string url = "https://147.163.26.230:8443/openotp/";
+    string username = this->usernameHTAssociato;
+    string password = this->passwordHTAssociato;
 
     char * writableURL = new char[url.size() + 1];
     std::copy(url.begin(), url.end(), writableURL);
