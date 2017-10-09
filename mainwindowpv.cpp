@@ -74,6 +74,8 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
     this->schedeVotoDaMostrare = schede;
     this->indiceSchedaDaMostrare = 0;
     this->schedeCompilate.clear();
+    ui->label_numeroScheda->hide();
+    ui->label_numeroSchedaValue->hide();
     mostraScheda();
 
 }
@@ -114,18 +116,16 @@ void MainWindowPV::mostraScheda(){
     //item->setFont(serifFont);
     ui->label_procedura_value->setText(QString::number(codProcedura));
 
+    uint idScheda = schedaCorrente.getId();
+    ui->label_numeroScheda->setText(QString::number(idScheda));
+
     string descScheda = schedaCorrente.getDescrizioneElezione();
-    //    item = new QListWidgetItem("Codice scheda: " +
-    //                               QString::number(codScheda),ui->listWidget_scheda);
-    //    item->setFont(serifFont);
-    ui->label_numeroSchedaValue->setText(QString::fromStdString(descScheda));
+    ui->label_descrizioneSchedaValue->setText(QString::fromStdString(descScheda));
 
     uint numeroPreferenze = schedaCorrente.getNumPreferenze();
-    //    item = new QListWidgetItem("Numero preferenze: " +
-    //                               QString::number(numeroPreferenze),ui->listWidget_scheda);
-    //    item->setFont(serifFont);
     ui->label_numeroPreferenzeValue->setText(QString::number(numeroPreferenze));
     numPreferenzeMax = numeroPreferenze;
+
     numPreferenzeChecked = 0;
     cout << "View:Numero preferenze selezionate: " << numPreferenzeChecked << endl;
 
