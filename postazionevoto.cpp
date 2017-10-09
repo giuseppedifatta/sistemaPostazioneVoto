@@ -17,7 +17,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     attivata = false;
 
 
-    string myIP = this->getIPbyInterface("enp0s8");
+    myIP = this->getIPbyInterface("enp0s8");
     idPostazioneVoto = getIdPVbyMyIP(myIP);
     cout << "Postazione Voto n. " << idPostazioneVoto << endl;
 
@@ -47,6 +47,7 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
         attivata = true;
     }
     mutex_statoPV.unlock();
+
 
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
     emit stateChange(nuovoStato);
@@ -108,7 +109,6 @@ bool PostazioneVoto::setHTAssociato(string tokenCod, string username, string pas
             this->HTAssociato = tokenCod;
             this->usernameHTAssociato = username;
             this->passwordHTAssociato = password;
-
 
             return true;
         }
@@ -1058,12 +1058,12 @@ void PostazioneVoto::setRSAPublicKeyRP(const string &publicKeyEncoded)
 }
 
 
-uint PostazioneVoto::getMatricolaVotante() const
+string PostazioneVoto::getMatricolaVotante() const
 {
     return matricolaVotante;
 }
 
-void PostazioneVoto::setMatricolaVotante(const uint &value)
+void PostazioneVoto::setMatricolaVotante(const string &value)
 {
     matricolaVotante = value;
 }
@@ -1102,4 +1102,14 @@ string PostazioneVoto::getIPbyInterface(const char * interfaceName){
     freeifaddrs(ifaddr);
     string ip_host = host;
     return ip_host;
+}
+
+string PostazioneVoto::getMyIP() const
+{
+    return myIP;
+}
+
+void PostazioneVoto::setMyIP(const string &value)
+{
+    myIP = value;
 }

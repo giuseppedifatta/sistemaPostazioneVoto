@@ -109,8 +109,8 @@ public:
 
 
     bool tryConnectUrna();
-    uint getMatricolaVotante() const;
-    void setMatricolaVotante(const uint &value);
+    string getMatricolaVotante() const;
+    void setMatricolaVotante(const string &value);
 
     int verifyMAC(string encodedSessionKey, string data, string macEncoded);
     string getUsernameHTAssociato() const;
@@ -126,11 +126,15 @@ public:
     void setIdSeggio(const uint &value);
 
     string getIPbyInterface(const char *interfaceName);
+    string getMyIP() const;
+    void setMyIP(const string &value);
+
 private:
     bool attivata;
     string ipUrna;
     string postazioneSeggio;
     uint idSeggio;
+    string myIP;
     //dati membro
 
     unsigned int idPostazioneVoto; //relativo all'IP, da calcolare leggendo l'indirizzo IP del "localhost"
@@ -145,7 +149,7 @@ private:
     //informazioni da ricevere dal seggio, nel momento in cui effettua il push dell'associazione
     string usernameHTAssociato;
     string passwordHTAssociato;
-    uint matricolaVotante;
+    string matricolaVotante;
     uint idTipoVotante;
 
 

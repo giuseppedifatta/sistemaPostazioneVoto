@@ -134,7 +134,7 @@ background-color: white;
             <item row="0" column="0">
              <widget class="QLabel" name="passwordPV_label">
               <property name="text">
-               <string>Session key PV n.</string>
+               <string>Session key</string>
               </property>
              </widget>
             </item>

@@ -85,7 +85,7 @@ public:
 
     //verso OTPServerProvider
     void richiestaServizioInvioSchede(uint numSchede);
-    bool sendMatricolaAndConfirmStored(uint matricola);
+    bool sendMatricolaAndConfirmStored(string matricola);
 
 
     void invioKC_IVC(string encryptedKey, string encryptedIV);

@@ -248,6 +248,7 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         //ricevi idTipoVotante
         string strTipo;
         if(receiveString_SSL(ssl,strTipo)!=0){
+            cout << "Tipo votante: " << strTipo << endl;
             idTipoVotante = atoi(strTipo.c_str());
         }
         else{
@@ -255,41 +256,40 @@ void SSLServer::service(SSL * ssl, servizi servizio) {
         }
 
         //ricevi matricola votante
-        string strMatricola;
-        if(receiveString_SSL(ssl,strMatricola)==0){
+        string matricola;
+        if(receiveString_SSL(ssl,matricola)==0){
             erroreRicezioneDati = true;
         }
-
+        cout << "Matricola: "<< matricola << endl;
         //ricezione usernameHT
-        if(receiveString_SSL(ssl,usernameHT)!=0){
+        if(receiveString_SSL(ssl,usernameHT)==0){
             erroreRicezioneDati = true;
         }
+        cout << "usernameHT: " << usernameHT << endl;
 
         //ricezione passwordHT
-        if(receiveString_SSL(ssl,passwordHT)!=0){
+        if(receiveString_SSL(ssl,passwordHT)==0){
             erroreRicezioneDati = true;
         }
+        cout << "passwordHT: " <<  passwordHT << endl;
 
         int success = 1;
         if(!erroreRicezioneDati && pvChiamante->setHTAssociato(snHT,usernameHT,passwordHT)){ //restituisce true se l'esito dell'operazione è positivo
             success = 0;
+            cout << "NO PROBLEM"<< endl;
             //settiamo le altre informazioni relative al votante
-            pvChiamante->setMatricolaVotante(atoi(strMatricola.c_str()));
+            pvChiamante->setMatricolaVotante(matricola);
             pvChiamante->setIdTipoVotante(idTipoVotante);
             pvChiamante->setStatoPV(pvChiamante->statiPV::attesa_abilitazione);
         }
 
         //inviamo al seggio il valore relativo al successo o all'insuccesso dell'operazione
-        stringstream ss;
-        ss << success;
-        string str = ss.str();
         pvChiamante->mutex_stdout.lock();
         cout << "ServerPV: setAssociation: return value to seggio: " << success << endl;
         pvChiamante->mutex_stdout.unlock();
 
         //inviamo al seggio un codice relativo all'esito dell'operazione
-        const char * successValue = str.c_str();
-        SSL_write(ssl,successValue,strlen(successValue));
+        sendString_SSL(ssl,to_string(success));
 
         break;
     }

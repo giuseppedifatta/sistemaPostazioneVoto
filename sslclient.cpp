@@ -527,8 +527,8 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio mio ip
-    string my_ip = pvChiamante->getIPbyInterface("enp0s8");
-    sendString_SSL(ssl,my_ip);
+    //string my_ip = pvChiamante->getIPbyInterface("enp0s8");
+    sendString_SSL(ssl,/*my_ip*/pvChiamante->getMyIP());
 
     //ricevo idProceduraVoto
     uint idProcedura;
@@ -671,8 +671,10 @@ void SSLClient::richiestaServizioInvioSchede(uint numSchede){
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio mio ip
-    string my_ip = pvChiamante->getIPbyInterface("enp0s8");
-    sendString_SSL(ssl,my_ip);
+//    string my_ip = pvChiamante->getIPbyInterface("enp0s8");
+//    sendString_SSL(ssl,my_ip);
+    sendString_SSL(ssl,/*my_ip*/pvChiamante->getMyIP());
+
 
 
     //invio del numero di schede che si vuole inviare
@@ -721,9 +723,9 @@ bool SSLClient::inviaScheda_Nonce_MAC(string schedaStr,string nonceAsString,stri
 
 
 
-bool SSLClient::sendMatricolaAndConfirmStored(uint matricola){
+bool SSLClient::sendMatricolaAndConfirmStored(string matricola){
     //invia matricola
-    sendString_SSL(ssl,to_string(matricola));
+    sendString_SSL(ssl,matricola);
 
     //ricevo conferma che i pacchetti stanno per essere memorizzati
     string ack;
@@ -799,6 +801,7 @@ bool SSLClient::testConnection(){
     SSL_write(ssl,charCod,strlen(charCod));
 
 
+    sendString_SSL(ssl,pvChiamante->getMyIP() );
     string connectionOK;
     if(receiveString_SSL(ssl,connectionOK)!=0){
         if (connectionOK == "ok"){

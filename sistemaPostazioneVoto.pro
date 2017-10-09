@@ -58,4 +58,7 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../usr/lib/i38
 else:unix: LIBS += -L$$PWD/../../../../usr/lib/i386-linux-gnu/ -ltinyxml2
 
 
-unix|win32: LIBS += -lopenotp
+#unix|win32: LIBS += -lopenotp
+
+
+LIBS += -L$$PWD/../../../../usr/lib/ -lopenotp
