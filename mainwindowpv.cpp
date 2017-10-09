@@ -27,10 +27,12 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     QObject::connect(this,SIGNAL(inviaSchedeCompilate(vector<SchedaCompilata>)),pv,SLOT(inviaVotiToUrna2(vector<SchedaCompilata>)));//secondo metodo di invio settato come risposta al signal di invio
     QObject::connect(this,SIGNAL(checkOTP(QString)),pv,SLOT(validateOTP(QString)));
     QObject::connect(pv,SIGNAL(wrongOTP()),SLOT(showErrorOTP()));
+    QObject::connect(this,SIGNAL(needNumberPV()),pv,SLOT(numberPV()));
+    QObject::connect(pv,SIGNAL(giveNumberPV(uint)),this,SLOT(updateNumberPV(uint)));
 
     //avvio il thread del model
     pv->start();
-
+    emit needNumberPV();
     cout << "View: postazione avviata" << endl;
 
 }
@@ -82,6 +84,13 @@ void MainWindowPV::showErrorOTP()
     msgBox.setInformativeText("Il codice OTP inserito non è valido, riprovare...");
     msgBox.exec();
     ui->codiceOTP_lineEdit->clear();
+}
+
+void MainWindowPV::updateNumberPV(uint numeroPV)
+{
+    this->numeroPV = numeroPV;
+    QString titoloAttivazionePage = ui->label_attivazionePV->text() + QString::number(numeroPV);
+    ui->label_attivazionePV->setText(titoloAttivazionePage);
 }
 
 void MainWindowPV::mostraScheda(){

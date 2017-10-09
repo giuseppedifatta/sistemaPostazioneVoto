@@ -54,6 +54,7 @@ signals:
     void wrongPassKey();
     void giveSchedeToView(vector <SchedaVoto> schedeDaMostrare);
     void wrongOTP();
+    void giveNumberPV(uint numeroPostazione);
     //void urnaNonRaggiungibile();
 
 public slots:
@@ -63,7 +64,7 @@ public slots:
     //void inviaVotiToUrna(vector <SchedaCompilata> schede);
     void validatePassKey(QString pass);
     void validateOTP(QString otp);
-
+    void numberPV();
     void inviaVotiToUrna2(vector<SchedaCompilata> schede);
 public:
     explicit PostazioneVoto(QObject *parent = 0);
@@ -168,7 +169,7 @@ private:
     string AESencryptStdString(string plain, SecByteBlock key, SecByteBlock iv);
     string RSAencryptSecByteBlock(SecByteBlock valueBlock, CryptoPP::RSA::PublicKey publicKey);
     string calcolaIpSeggio(string ipPostazione);
-
+    uint getIdPVbyMyIP(string myIP);
 protected:
 
      void inactivitySessionClose();

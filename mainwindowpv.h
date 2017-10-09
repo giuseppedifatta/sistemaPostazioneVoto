@@ -21,6 +21,7 @@ private:
     vector <SchedaVoto> schedeVotoDaMostrare;
     Ui::MainWindowPV *ui;
     PostazioneVoto * pv;
+    uint numeroPV;
 
     unsigned int indiceSchedaDaMostrare;
     vector <SchedaCompilata> schedeCompilate;
@@ -65,6 +66,7 @@ public slots:
     void messageErrorPassword();
     void receiveSchedeToShow(vector <SchedaVoto> schede);
     void showErrorOTP();
+    void updateNumberPV(uint numeroPV);
     //void showInterfaceUrnaOffline();
     //void showMessageUrnaUnreachable();
 signals:
@@ -73,6 +75,7 @@ signals:
     void needSchede();
     void inviaSchedeCompilate(vector <SchedaCompilata> schede);
     void checkOTP(QString);
+    void needNumberPV();
 };
 
 #endif // MAINWINDOWPV_H

@@ -84,57 +84,13 @@ background-color: white;
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="attivazione_page">
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout">
-            <item>
-             <layout class="QFormLayout" name="formLayout">
-              <property name="leftMargin">
-               <number>50</number>
-              </property>
-              <property name="topMargin">
-               <number>150</number>
-              </property>
-              <property name="rightMargin">
-               <number>50</number>
-              </property>
-              <property name="bottomMargin">
-               <number>50</number>
-              </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="passwordPV_label">
-                <property name="text">
-                 <string>Session key PV n.</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="passwordPV_lineEdit">
-                <property name="placeholderText">
-                 <string>Digitare la password di sessione</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLabel" name="wrongPassword_label">
-                <property name="styleSheet">
-                 <string notr="true">color:red;</string>
-                </property>
-                <property name="text">
-                 <string>la password inserita non è valida, riprovare...</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-          <item>
+         <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0">
+          <item row="2" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <property name="spacing">
              <number>50</number>
@@ -160,6 +116,56 @@ background-color: white;
              </widget>
             </item>
            </layout>
+          </item>
+          <item row="1" column="0">
+           <layout class="QFormLayout" name="formLayout">
+            <property name="leftMargin">
+             <number>50</number>
+            </property>
+            <property name="topMargin">
+             <number>150</number>
+            </property>
+            <property name="rightMargin">
+             <number>50</number>
+            </property>
+            <property name="bottomMargin">
+             <number>50</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="QLabel" name="passwordPV_label">
+              <property name="text">
+               <string>Session key PV n.</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="passwordPV_lineEdit">
+              <property name="placeholderText">
+               <string>Digitare la password di sessione</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLabel" name="wrongPassword_label">
+              <property name="styleSheet">
+               <string notr="true">color:red;</string>
+              </property>
+              <property name="text">
+               <string>la password inserita non è valida, riprovare...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_attivazionePV">
+            <property name="text">
+             <string>ATTIVAZIONE POSTAZIONE VOTO N. </string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

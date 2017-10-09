@@ -16,11 +16,13 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
 
     attivata = false;
 
-    //TODO calcolare dall'indirizzo IP
-    idPostazioneVoto = 1; //getIdPVbyMyIP()
+
     string myIP = this->getIPbyInterface("enp0s8");
+    idPostazioneVoto = getIdPVbyMyIP(myIP);
+    cout << "Postazione Voto n. " << idPostazioneVoto << endl;
+
     postazioneSeggio = calcolaIpSeggio(myIP); //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
-    ipUrna = "192.168.19.130";
+    ipUrna = "192.168.19.134";
     //init client
     //this->pv_client = new SSLClient(this);
 
@@ -48,8 +50,6 @@ void PostazioneVoto::setStatoPV(statiPV nuovoStato) {
 
     //emetto il segnale che comunica il cambiamento di stato della postazione di voto
     emit stateChange(nuovoStato);
-
-
 
 
     this->mutex_stdout.lock();
@@ -588,6 +588,19 @@ string PostazioneVoto::calcolaIpSeggio(string ipPostazione)
     return ipSeggio;
 }
 
+uint PostazioneVoto::getIdPVbyMyIP(string myIP)
+{
+    int byte1, byte2, byte3, byte4;
+    char dot;
+    istringstream s(myIP);  // input stream that now contains the ip address string
+
+    s >> byte1 >> dot >> byte2 >> dot >> byte3 >> dot >> byte4 >> dot;
+
+    //estraiamo il valore in modulo 4 del byte meno significato dell'indirizzo ip
+    //questo è l'id della Postazione Voto riferito al seggio di appartenenza
+    return byte4 % 4;
+}
+
 void PostazioneVoto::inactivitySessionClose()
 {
     //TODO funzione da richiamare con un thread
@@ -663,6 +676,11 @@ void PostazioneVoto::validateOTP(QString otp)
 
     // don't forget to free the string after finished using it
 
+}
+
+void PostazioneVoto::numberPV()
+{
+    emit giveNumberPV(idPostazioneVoto);
 }
 
 
