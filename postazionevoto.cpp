@@ -203,8 +203,8 @@ void PostazioneVoto::selectSchedeDaMostrare()
         //seleziona la scheda se l'elettore corrente assegnato alla postazione può votare per questa scheda
         vector<uint> idTipoVotanti = schedeVoto.at(i).getIdTipiVotantiConsentiti();
         for(uint t = 0; t < idTipoVotanti.size(); t++){
-            if(idTipoVotante == idTipoVotanti.at(i)){
-
+            if(idTipoVotante == idTipoVotanti.at(t)){
+                cout << "Trovata una scheda per questo votante!" << endl;
                 schedeDaMostrare.push_back(schedeVoto.at(i));
                 break;
             }
