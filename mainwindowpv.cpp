@@ -74,8 +74,8 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
     this->schedeVotoDaMostrare = schede;
     this->indiceSchedaDaMostrare = 0;
     this->schedeCompilate.clear();
-    //ui->label_idScheda->hide();
-    //ui->label_idSchedaValue->hide();
+    //ui->label_numeroScheda->hide();
+    //ui->label_numeroSchedaValue->hide();
     mostraScheda();
 
 }
@@ -117,7 +117,7 @@ void MainWindowPV::mostraScheda(){
     ui->label_procedura_value->setText(QString::number(codProcedura));
 
     uint idScheda = schedaCorrente.getId();
-    ui->label_numeroScheda->setText(QString::number(idScheda));
+    ui->label_idSchedaValue->setText(QString::number(idScheda));
 
     string descScheda = schedaCorrente.getDescrizioneElezione();
     ui->label_descrizioneSchedaValue->setText(QString::fromStdString(descScheda));
