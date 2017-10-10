@@ -74,8 +74,8 @@ void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
     this->schedeVotoDaMostrare = schede;
     this->indiceSchedaDaMostrare = 0;
     this->schedeCompilate.clear();
-    ui->label_numeroScheda->hide();
-    ui->label_numeroSchedaValue->hide();
+    //ui->label_idScheda->hide();
+    //ui->label_idSchedaValue->hide();
     mostraScheda();
 
 }
@@ -247,7 +247,7 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
     }
     SchedaCompilata sc;
 
-    uint codScheda = ui->label_numeroSchedaValue->text().toUInt();
+    uint codScheda = ui->label_idSchedaValue->text().toUInt();
     sc.setIdScheda(codScheda);
     uint idProcedura = ui->label_procedura_value->text().toUInt();
     sc.setIdProcedura(idProcedura);
@@ -263,7 +263,7 @@ void MainWindowPV::on_pushButton_nextSend_clicked()
     {
         QListWidgetItem* item = ui->listWidget_scheda->item(i);
         if(item->checkState()==Qt::CheckState::Checked){
-            QVariant var = item->data(Qt::UserRole);
+            QVariant var = item->data(Qt::UserRole); //nell'oggetto data viene memorizzata l'informazione della matricola del candidato, al momento della visualizzazione della schedea di voto
             sc.addMatricolaPreferenza(var.toString().toStdString());
         }
     }
