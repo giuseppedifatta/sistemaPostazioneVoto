@@ -336,15 +336,17 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
                 //una scheda non è stata inviata, nonostante i 10 tentativi
                 //abortire l'invio
                 erroreInvio = true;
+                cout << "PV: erroe invio schede" << endl;
                 break;
             }
         }
 
         //comunicazione matricola e conferma esito positivo di ricezione schede
-        cout << "PV: Comunico all'urna chi è che ha espresso il voto" << endl;
-        if(!erroreInvio){
-            if(pv_client->sendMatricolaAndConfirmStored(matricolaVotante)){
 
+        if(!erroreInvio){
+            cout << "PV: Comunico all'urna chi è che ha espresso il voto" << endl;
+            if(pv_client->sendMatricolaAndConfirmStored(matricolaVotante)){
+                erroreInvio = false;
                 inviati = true;
             }
             else{
@@ -356,6 +358,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
 
     else{ //else connect
         //emit urnaNonRaggiungibile();
+        cout << "PV: postazione offline, impossibile inviare le schede" << endl;
 
         postazioneOffline = true;
         //interrompiamo l'esecuzione della funzione, poichè non è possibile comunicare con l'urna e non sarebbe possibile inviare le schede di voto
@@ -367,7 +370,7 @@ void PostazioneVoto::inviaVotiToUrna2(vector<SchedaCompilata> schede){
 
 
 
-    cout << "PV: tutte le schede sono state consegnate all'urna virtuale" << endl;
+
     //settiamo lo stato della postazione in base all'esito dell'operazione
     if(inviati){
         //tutte le schede votate sono state recapitate correttamente nell'urna

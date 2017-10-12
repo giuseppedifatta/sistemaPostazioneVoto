@@ -72,6 +72,9 @@ void MainWindowPV::mostraInterfacciaPostazioneAttiva(){
 void MainWindowPV::receiveSchedeToShow(vector <SchedaVoto> schede)
 {
     this->schedeVotoDaMostrare = schede;
+
+    //TODO stack overflow se chi si rega a votare non ha nessuna scheda da votare
+
     this->indiceSchedaDaMostrare = 0;
     this->schedeCompilate.clear();
     //ui->label_numeroScheda->hide();
@@ -208,7 +211,7 @@ void MainWindowPV::updateInterfaccia(unsigned int statoPV){
         cout << "View:schermata abilitazione otp impostata" << endl;
         break;
     case pv->statiPV::votazione_in_corso:
-        cout << "View:richiesta schede di voto" << endl;
+        cout << "View: richiesta schede di voto" << endl;
         emit needSchede();
         ui->stackedWidget->setCurrentIndex(InterfaccePV::compilazioneSchede);
         break;
