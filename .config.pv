@@ -1,0 +1,13 @@
+#file di configurazione del sistema Postazione Voto, inserire le impostazioni di configurazione una per riga, separando voce e valore con uno spazio o un altro simbolo di un solo carattere alfanumerico
+
+ipUrna 192.168.19.133
+
+clientCertPem /home/giuseppe/myCA/intermediate/certs/client.cert.pem
+clientKeyPem /home/giuseppe/myCA/intermediate/private/client.key.pem
+chainFilePem /home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem
+
+serviceOTP https://192.168.1.10:8443/openotp/
+
+interfaceIP enp0s8
+
+

@@ -17,6 +17,7 @@
 #include <thread>
 #include <queue>
 #include "postazionevoto.h"
+#include "conf.h"
 
 using namespace std;
 
@@ -52,7 +53,7 @@ private:
     void cleanup_openssl();
 
     void createServerContext();
-    void configure_context(char* CertFile, char* KeyFile, char* ChainFile);
+    void configure_context(const char *CertFile, const char *KeyFile, const char *ChainFile);
     void ShowCerts(SSL *ssl);
     void verify_ClientCert(SSL *ssl);
     void Servlet(int client_sock);

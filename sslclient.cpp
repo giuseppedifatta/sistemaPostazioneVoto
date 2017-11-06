@@ -29,15 +29,17 @@ SSLClient::SSLClient(PostazioneVoto *pv){
 
     this->createClientContext();
 
+    string pathCertFilePem = getConfig("clientCertPem");
+    const char * certFile = pathCertFilePem.c_str();
 
-    char certFile[] = "/home/giuseppe/myCA/intermediate/certs/client.cert.pem";
-    char keyFile[] = "/home/giuseppe/myCA/intermediate/private/client.key.pem";
-    char chainFile[] =
-            "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
+    string pathKeyFilePem = getConfig("clientKeyPem");
+    const char * keyFile = pathKeyFilePem.c_str();
+
+    string pathChainFilePem = getConfig("chainFilePem");
+    const char * chainFile = pathChainFilePem.c_str();
 
     this->configure_context(certFile, keyFile, chainFile);
     cout << "ClientPV:Costruttore Client: Cert and key configured" << endl;
-
 
 }
 
@@ -297,8 +299,10 @@ void SSLClient::ShowCerts() {
 
 }
 
-void SSLClient::configure_context(char* CertFile, char* KeyFile, char * ChainFile) {
+void SSLClient::configure_context(const char* CertFile, const char* KeyFile, const char * ChainFile) {
     SSL_CTX_set_ecdh_auto(this->ctx, 1);
+
+
 
     //---il chainfile dovrà essere ricevuto dal peer che si connette? non so se è necessario su entrambi i peer----
     SSL_CTX_load_verify_locations(this->ctx,ChainFile, NULL);
@@ -316,7 +320,7 @@ void SSLClient::configure_context(char* CertFile, char* KeyFile, char * ChainFil
     }
 
     if (!SSL_CTX_check_private_key(this->ctx)) {
-        fprintf(stderr, "Private key does not match the public certificate\n");
+        fprintf(stderr, "ClientPV: Private key does not match the public certificate\n");
         abort();
     }
 
@@ -527,7 +531,6 @@ bool SSLClient::attivaPostazioneVoto(string sessionKey)
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio mio ip
-    //string my_ip = pvChiamante->getIPbyInterface("enp0s8");
     sendString_SSL(ssl,/*my_ip*/pvChiamante->getMyIP());
 
     //ricevo idProceduraVoto
@@ -671,8 +674,6 @@ void SSLClient::richiestaServizioInvioSchede(uint numSchede){
     SSL_write(ssl,charCod,strlen(charCod));
 
     //invio mio ip
-//    string my_ip = pvChiamante->getIPbyInterface("enp0s8");
-//    sendString_SSL(ssl,my_ip);
     sendString_SSL(ssl,/*my_ip*/pvChiamante->getMyIP());
 
 

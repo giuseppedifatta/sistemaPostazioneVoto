@@ -33,12 +33,17 @@ SSLServer::SSLServer(PostazioneVoto *pv){
     this->init_openssl_library();
     this->createServerContext();
 
-    char certFile[] =
-            "/home/giuseppe/myCA/intermediate/certs/localhost.cert.pem";
-    char keyFile[] =
-            "/home/giuseppe/myCA/intermediate/private/localhost.key.pem";
-    char chainFile[] =
-            "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
+//    const char *certFile = "/home/giuseppe/myCA/intermediate/certs/client.cert.pem";
+//    const char *keyFile = "/home/giuseppe/myCA/intermediate/private/client.key.pem";
+//    const char *chainFile = "/home/giuseppe/myCA/intermediate/certs/ca-chain.cert.pem";
+    string s1 = getConfig("clientCertPem");
+    const char *certFile = s1.c_str();
+
+    string s2 = getConfig("clientKeyPem");
+    const char *keyFile = s2.c_str();
+
+    string s3 = getConfig("chainFilePem");
+    const char *chainFile = s3.c_str();
 
     configure_context(certFile, keyFile, chainFile);
 
@@ -436,7 +441,7 @@ void SSLServer::createServerContext() {
     //return ctx;
 }
 
-void SSLServer::configure_context(char* CertFile, char* KeyFile, char* ChainFile) {
+void SSLServer::configure_context(const char* CertFile, const char* KeyFile, const char* ChainFile) {
     SSL_CTX_set_ecdh_auto(this->ctx, 1);
 
     SSL_CTX_load_verify_locations(this->ctx, ChainFile, ChainFile);
@@ -452,12 +457,13 @@ void SSLServer::configure_context(char* CertFile, char* KeyFile, char* ChainFile
     if (SSL_CTX_use_PrivateKey_file(this->ctx, KeyFile, SSL_FILETYPE_PEM) < 0) {
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
+
     }
 
     //SSL_CTX_set_default_passwd_cb(ctx,"password"); // cercare funzionamento con reference
 
     if (!SSL_CTX_check_private_key(this->ctx)) {
-        fprintf(stderr, "Private key does not match the public certificate\n");
+        fprintf(stderr, "ServerPV: Private key does not match the public certificate\n");
         abort();
     }
     //substitute NULL with the name of the specific verify_callback

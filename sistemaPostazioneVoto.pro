@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     schedavoto.cpp \
     candidato.cpp \
     listaelettorale.cpp \
-    schedacompilata.cpp
+    schedacompilata.cpp \
+    conf.cpp
 
 HEADERS  += mainwindowpv.h \
     postazionevoto.h \
@@ -30,7 +31,8 @@ HEADERS  += mainwindowpv.h \
     candidato.h \
     listaelettorale.h \
     schedacompilata.h \
-    openotp_login.h
+    openotp_login.h \
+    conf.h
 
 FORMS    += mainwindowpv.ui
 

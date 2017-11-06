@@ -7,6 +7,7 @@
 
 #include "postazionevoto.h"
 #include "openotp_login.h"
+#include "conf.h"
 
 
 PostazioneVoto::PostazioneVoto(QObject *parent) :
@@ -16,13 +17,13 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
 
     attivata = false;
 
-
-    myIP = this->getIPbyInterface("enp0s8");
+    string interfaceIP = getConfig("interfaceIP");
+    myIP = this->getIPbyInterface(interfaceIP.c_str());
     idPostazioneVoto = getIdPVbyMyIP(myIP);
     cout << "Postazione Voto n. " << idPostazioneVoto << endl;
 
     postazioneSeggio = calcolaIpSeggio(myIP); //ricavare l'IP della postazione seggio a cui la postazione voto appartiene
-    ipUrna = "192.168.19.134";
+    ipUrna = getConfig("ipUrna");
     //init client
     //this->pv_client = new SSLClient(this);
 
@@ -644,7 +645,7 @@ void PostazioneVoto::validateOTP(QString otp)
 {
 
     //contattare otpServer per verificare il token rispetto all'account relativo al token associato alla postazione voto
-    string url = "https://147.163.26.221:8443/openotp/";
+    string url = getConfig("serviceOTP");
     string username = this->usernameHTAssociato;
     string password = this->passwordHTAssociato;
 

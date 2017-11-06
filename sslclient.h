@@ -18,6 +18,7 @@
 using namespace std;
 
 #include "postazionevoto.h"
+#include "conf.h"
 
 using namespace std;
 class PostazioneVoto;
@@ -41,7 +42,7 @@ private:
     void createClientContext();
     int create_socket(const char * port);
     void ShowCerts();
-    void configure_context(char* CertFile, char* KeyFile, char * ChainFile);
+    void configure_context(const char *CertFile, const char *KeyFile, const char *ChainFile);
     void verify_ServerCert();
     void cleanup_openssl();
 
