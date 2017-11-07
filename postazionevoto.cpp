@@ -18,6 +18,7 @@ PostazioneVoto::PostazioneVoto(QObject *parent) :
     attivata = false;
 
     string interfaceIP = getConfig("interfaceIP");
+    cout << "interfaccia indirizzo ip: " << interfaceIP << endl;
     myIP = this->getIPbyInterface(interfaceIP.c_str());
     idPostazioneVoto = getIdPVbyMyIP(myIP);
     cout << "Postazione Voto n. " << idPostazioneVoto << endl;
@@ -575,11 +576,14 @@ string PostazioneVoto::RSAencryptSecByteBlock(SecByteBlock valueBlock,CryptoPP::
 
 string PostazioneVoto::calcolaIpSeggio(string ipPostazione)
 {
+    cout << "ip postazione"  << ipPostazione << endl;
     int byte1, byte2, byte3, byte4;
     char dot;
     istringstream s(ipPostazione);  // input stream that now contains the ip address string
 
     s >> byte1 >> dot >> byte2 >> dot >> byte3 >> dot >> byte4 >> dot;
+
+    cout << "byte4: " << byte4 << endl;
 
     //estraiamo il valore in modulo 4 del byte meno significato dell'indirizzo ip
     int resto = byte4 % 4;
@@ -1073,6 +1077,8 @@ void PostazioneVoto::setMatricolaVotante(const string &value)
 }
 
 string PostazioneVoto::getIPbyInterface(const char * interfaceName){
+
+    cout << "interface name: " << interfaceName << endl;
     struct ifaddrs *ifaddr, *ifa;
     int /*family,*/ s;
     char host[NI_MAXHOST];
@@ -1100,6 +1106,7 @@ string PostazioneVoto::getIPbyInterface(const char * interfaceName){
             }
             printf("\tInterface : <%s>\n",ifa->ifa_name );
             printf("\t  Address : <%s>\n", host);
+            break;
         }
     }
 

@@ -14,6 +14,10 @@ MainWindowPV::MainWindowPV(QWidget *parent) :
     ui->stackedWidget->setCurrentIndex(InterfaccePV::attivazione);
     ui->wrongPassword_label->hide();
 
+    setWindowFlags(Qt::FramelessWindowHint);
+
+    setWindowTitle("Voto digitale UNIPA");
+
     //inizializzo il model
     pv = new PostazioneVoto(this);
 
